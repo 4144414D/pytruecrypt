@@ -66,11 +66,11 @@ if len(sys.argv) != 3:
 	sys.exit(0)
 	
 # Open file
-tchdr = open(sys.argv[1], "rb").read(512)
+tchdr = open(sys.argv[1], "rb").read(131072)
 
 # First 64 bytes are salt
 salt = tchdr[0:64]
-#print "SALT: ",binascii.hexlify(salt)
+#sys.stderr.write( "SALT: "+binascii.hexlify(salt)+"\n")
 
 # Generate header keys
 pwhash= PBKDF2(sys.argv[2], salt, 64, count=2000, prf=lambda p,s: HMAC.new(p,s,RIPEMD).digest())
@@ -84,9 +84,15 @@ aesxts = AES.new(xtskey, AES.MODE_ECB)
 # decrypt header
 tchdr_plain = decrypt_block(aes, aesxts, 0, tchdr, 64)
 
+# dump header to screen
+sys.stdout.write(tchdr_plain)
+
+# Dump rest of header - normally random data
+#for i in range(1, 256):
+#	tc_plain = decrypt_block(aes, aesxts, i, tchdr[i*512:])
+#	sys.stdout.write(tc_plain)
+
 # Parse first few fields of header
 #print struct.unpack(">4cHH", tchdr_plain[0:8])
 
-# dump header to screen
-print tchdr_plain,
 
