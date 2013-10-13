@@ -33,7 +33,7 @@ def getXTSek2n(_aes, sector):
 alphatweaks = [1]
 alphatweaks.extend([2 << i for i in range(32)])  #(for 32 blocks)
 	
-def getXTSe2kna(ekn2, block):
+def getXTSek2na(ekn2, block):
 	global alphatweaks
 	return buftostr(inttoLE(gf2n_mul(LEtoint(strtobuf(ekn2)),alphatweaks[block],mod128)))
 
@@ -43,7 +43,7 @@ def decrypt_block(aes, aesxts, sector, ciphertext, offset=0):
 	tc_plain = ''
 	for i in range(offset, 512, 16):
 	#	print i
-		ek2na = getXTSe2kna(ek2n, (i-offset)/16)
+		ek2na = getXTSek2na(ek2n, (i-offset)/16)
 		#print "Tweak:", binascii.hexlify(ek2na)	
 
 		ptext = xor( aes.decrypt(xor(ek2na, ciphertext[i:i+16]) ) , ek2na)
