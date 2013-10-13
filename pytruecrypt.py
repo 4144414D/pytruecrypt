@@ -1,3 +1,4 @@
+import sys
 from Crypto.Protocol.KDF import *
 from Crypto.Hash import *
 from Crypto.Cipher import AES
@@ -49,12 +50,16 @@ def decrypt_block(aes, aesxts, sector, ciphertext, offset=0):
 		tc_plain += ptext
 	return tc_plain
 
+if len(sys.argv) != 3:
+	print "pytruecrypt.py filename password"
+	sys.exit(0)
+	
 #print alphatweaks
-tchdr = open("test.tc", "rb").read(512)
+tchdr = open(sys.argv[1], "rb").read(512)
 
 salt = tchdr[0:64]
 #print "SALT: ",binascii.hexlify(salt)
-pwhash= PBKDF2("abc123", salt, 64, count=2000, prf=lambda p,s: HMAC.new(p,s,RIPEMD).digest())
+pwhash= PBKDF2(sys.argv[2], salt, 64, count=2000, prf=lambda p,s: HMAC.new(p,s,RIPEMD).digest())
 aeskey = pwhash[0:32]
 xtskey = pwhash[32:64]
 
