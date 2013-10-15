@@ -29,3 +29,6 @@ Example:
 	--more zeroes--  
 	000100: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00   ................  
 
+And using struct to pass the fields:
+
+	TCHDR(Magic='TRUE', HdrVersion=5, MinProgVer=7, CRC=684324914, Reserved='\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', HiddenVolSize=0, VolSize=4980736, DataStart=131072, DataSize=4980736, Flags=0, SectorSize=512)
