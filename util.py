@@ -12,16 +12,16 @@ def hexdump(src, length=16):
 # Integer to little endian (int array)
 # Note: must output 128bit block (ignoring higher significant bytes) otherwise breaks xts code
 def inttoLE(x):
-	str=[]
+	str=''
 	for i in range(16):
-		str.append((x & (0xFF << i*8)) >> i*8)
+		str += (chr((x & (0xFF << i*8)) >> i*8))
 	return str
 
 # Little endian (int array) to integer
 def LEtoint(x):
 	y = 0
 	for i in range(16):
-		y = y + (x[i] << i*8)
+		y = y + (ord(x[i]) << i*8)
 	return y
 
 # Integer array to string

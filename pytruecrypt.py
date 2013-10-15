@@ -11,20 +11,21 @@ from util import *
 # Offset for partial sector decrypts (e.g. hdr)
 def decrypt_sector(aes, aesxts, sector, ciphertext, offset=0):
 	# Encrypt IV to produce XTS tweak
-	ek2n = aesxts.encrypt(buftostr(inttoLE(sector)))
+	ek2n = aesxts.encrypt(inttoLE(sector))
 
 	tc_plain = ''
 	for i in range(offset, 512, 16):
 		# Decrypt and apply tweak according to XTS scheme
+		# pt = Dec(ct ^ ek2n) ^ ek2n
 		ptext = xor( aes.decrypt( xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
 		tc_plain += ptext
 
 		# exponentiate tweak for next block (multiply by two in finite field)
-		ek2n_i = LEtoint(strtobuf(ek2n))           # Little Endian to python int
+		ek2n_i = LEtoint(ek2n)		           # Little Endian to python int
 		ek2n_i = (ek2n_i << 1)			   # multiply by two using left shift
 		if ek2n_i & (1<<128):			   # correct for carry
 			ek2n_i ^= 0x87
-		ek2n = buftostr(inttoLE(ek2n_i))	   # python into to Little Endian (ignoring bits >128)
+		ek2n = inttoLE(ek2n_i)			   # python into to Little Endian (ignoring bits >128)
 
 	return tc_plain
 
