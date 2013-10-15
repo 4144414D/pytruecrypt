@@ -3,7 +3,6 @@ import sys
 from Crypto.Protocol.KDF import *
 from Crypto.Hash import *
 from Crypto.Cipher import AES
-from galois import *
 import binascii
 import struct 
 
@@ -26,11 +25,11 @@ def inttoLE(x):
 	return str
 
 # Little endian (int array) to integer
-def LEtoint(x):
-	y = 0
-	for i in range(16):
-		y = y + (x[i] << i*8)
-	return y
+#def LEtoint(x):
+#	y = 0
+#	for i in range(16):
+#		y = y + (x[i] << i*8)
+#	return y
 
 # Integer array to string
 def buftostr(x):
@@ -44,34 +43,32 @@ def strtobuf(x):
 def xor(a,b):
 	return ''.join([chr(ord(a[i])^ord(b[i])) for i in range(len(a))])
 
-
-# Generate sector ek2(n)
-def getXTSek2n(_aes, sector):
-	return _aes.encrypt(buftostr(inttoLE(sector)))
-
-# a^i precomputations - no need for galois here
-alphatweaks = [1]
-alphatweaks.extend([2 << i for i in range(32)])  #(for 32 blocks)
-
-# Take sector ek2(n) and add tweak for block (a^i)
-def getXTSek2na(ekn2, block):
-	global alphatweaks
-	return buftostr(inttoLE(gf2n_mul(LEtoint(strtobuf(ekn2)),alphatweaks[block],mod128)))
-
 # Decrypts a sector, given pycrypto aes object for master key plus xts key
 # Offset for partial sector decrypts (e.g. hdr)
 def decrypt_sector(aes, aesxts, sector, ciphertext, offset=0):
-	ek2n = getXTSek2n(aesxts, sector)
+	# Encrypt IV to produce XTS tweak
+	ek2n = aesxts.encrypt(buftostr(inttoLE(sector)))
 
 	tc_plain = ''
 	for i in range(offset, 512, 16):
-	#	print i
-		ek2na = getXTSek2na(ek2n, (i-offset)/16)
-		#print "Tweak:", binascii.hexlify(ek2na)	
-
-		ptext = xor( aes.decrypt(xor(ek2na, ciphertext[i:i+16]) ) , ek2na)
+		# Decrypt and apply tweak according to XTS scheme
+		ptext = xor( aes.decrypt(xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
 		tc_plain += ptext
+
+		# exponentiate tweak for next block (multiply by two in finite field)
+		ek2n = strtobuf(ek2n)
+		carry_in = 0
+		carry_out = 0
+		for k in range(16):
+			carry_out = ek2n[k] & 0x80
+			ek2n[k] = ((ek2n[k]<<1)&0xff) | (1 if carry_in > 0 else 0)
+			carry_in = carry_out
+		if carry_in > 0:
+			ek2n[0] = ek2n[0] ^ 0x87		
+		ek2n = buftostr(ek2n)
+
 	return tc_plain
+
 
 ################## CODE START ######################
 
