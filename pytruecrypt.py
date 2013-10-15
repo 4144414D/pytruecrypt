@@ -1,3 +1,4 @@
+from collections import namedtuple
 import sys
 from Crypto.Protocol.KDF import *
 from Crypto.Hash import *
@@ -47,7 +48,7 @@ def getXTSek2na(ekn2, block):
 
 # Decrypts a sector, given pycrypto aes object for master key plus xts key
 # Offset for partial sector decrypts (e.g. hdr)
-def decrypt_block(aes, aesxts, sector, ciphertext, offset=0):
+def decrypt_sector(aes, aesxts, sector, ciphertext, offset=0):
 	ek2n = getXTSek2n(aesxts, sector)
 
 	tc_plain = ''
@@ -76,23 +77,29 @@ salt = tchdr[0:64]
 pwhash= PBKDF2(sys.argv[2], salt, 64, count=2000, prf=lambda p,s: HMAC.new(p,s,RIPEMD).digest())
 aeskey = pwhash[0:32]
 xtskey = pwhash[32:64]
+#print "Hdr keys:", binascii.hexlify(aeskey+xtskey)
 
 # Load hdr keys into pycrypto
 aes = AES.new(aeskey, AES.MODE_ECB)
 aesxts = AES.new(xtskey, AES.MODE_ECB)
 
 # decrypt header
-tchdr_plain = decrypt_block(aes, aesxts, 0, tchdr, 64)
+tchdr_plain = decrypt_sector(aes, aesxts, 0, tchdr, 64)
 
 # dump header to screen
 sys.stdout.write(tchdr_plain)
 
 # Dump rest of header - normally random data
 #for i in range(1, 256):
-#	tc_plain = decrypt_block(aes, aesxts, i, tchdr[i*512:])
+#	tc_plain = decrypt_sector(aes, aesxts, i, tchdr[i*512:])
 #	sys.stdout.write(tc_plain)
 
 # Parse first few fields of header
-#print struct.unpack(">4cHH", tchdr_plain[0:8])
+
+TCHDR = namedtuple('TCHDR', "Magic, HdrVersion, MinProgVer, CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize")
+hdr_decoded = struct.unpack(">4sH", tchdr_plain[0:6]) + struct.unpack("<H", tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII", tchdr_plain[8:68])
+print
+print TCHDR._make(hdr_decoded)
+
 
 
