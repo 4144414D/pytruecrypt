@@ -18,6 +18,7 @@ def hexdump(src, length=16):
     return ''.join(lines)
 
 # Integer to little endian (int array)
+# Note: must output 128bit block (ignoring higher significant bytes) otherwise breaks xts code
 def inttoLE(x):
 	str=[]
 	for i in range(16):
@@ -25,11 +26,11 @@ def inttoLE(x):
 	return str
 
 # Little endian (int array) to integer
-#def LEtoint(x):
-#	y = 0
-#	for i in range(16):
-#		y = y + (x[i] << i*8)
-#	return y
+def LEtoint(x):
+	y = 0
+	for i in range(16):
+		y = y + (x[i] << i*8)
+	return y
 
 # Integer array to string
 def buftostr(x):
@@ -52,20 +53,15 @@ def decrypt_sector(aes, aesxts, sector, ciphertext, offset=0):
 	tc_plain = ''
 	for i in range(offset, 512, 16):
 		# Decrypt and apply tweak according to XTS scheme
-		ptext = xor( aes.decrypt(xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
+		ptext = xor( aes.decrypt( xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
 		tc_plain += ptext
 
 		# exponentiate tweak for next block (multiply by two in finite field)
-		ek2n = strtobuf(ek2n)
-		carry_in = 0
-		carry_out = 0
-		for k in range(16):
-			carry_out = ek2n[k] & 0x80
-			ek2n[k] = ((ek2n[k]<<1)&0xff) | (1 if carry_in > 0 else 0)
-			carry_in = carry_out
-		if carry_in > 0:
-			ek2n[0] = ek2n[0] ^ 0x87		
-		ek2n = buftostr(ek2n)
+		ek2n_i = LEtoint(strtobuf(ek2n))           # Little Endian to python int
+		ek2n_i = (ek2n_i << 1)			   # multiply by two using left shift
+		if ek2n_i & (1<<128):			   # correct for carry
+			ek2n_i ^= 0x87
+		ek2n = buftostr(inttoLE(ek2n_i))	   # python into to Little Endian (ignoring bits >128)
 
 	return tc_plain
 
