@@ -95,9 +95,8 @@ sys.stdout.write(tchdr_plain)
 #	sys.stdout.write(tc_plain)
 
 # Parse first few fields of header
-
-TCHDR = namedtuple('TCHDR', "Magic, HdrVersion, MinProgVer, CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize")
-hdr_decoded = struct.unpack(">4sH", tchdr_plain[0:6]) + struct.unpack("<H", tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII", tchdr_plain[8:68])
+TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
+hdr_decoded = struct.unpack(">4sH", tchdr_plain[0:6]) + struct.unpack("<H", tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", tchdr_plain[8:448])
 print
 print TCHDR._make(hdr_decoded)
 
