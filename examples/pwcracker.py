@@ -27,15 +27,29 @@ import os
 from subprocess import *
 import stat
 import getpass
+import getopt
 
-if len(sys.argv) != 3:
-	print "Usage: python pwcracker.py volumepath wordlist"
+hidden = False
+
+args = getopt.getopt(sys.argv[1:], "h")
+
+# parse cmdline options
+for k in args[0]:
+	if k[0]=='-h':
+		hidden = True
+
+if len(args[1]) != 2:
+	print "Usage: python pwcrack.py [-h] volumepath wordlist"
+	print "Crack truecrypt volume"
+	print
+	print "  -h\tcrack hidden volume"
+	print
 	sys.exit(1)
 
-FILENAME = sys.argv[1]
+FILENAME = args[1][0]
 
 # open word list
-fdwords = open(sys.argv[2], "r")
+fdwords = open(args[1][1], "r")
 
 #initialise pytruecrypt
 tc = PyTruecrypt(FILENAME)
@@ -45,7 +59,7 @@ for line in fdwords.readlines():
 	word = line.strip()
 
 	#open volume (returns false on failure)
-	if tc.open(word, decode=False, hidden=False):
+	if tc.open(word, decode=False, hidden=hidden):
 		print "PW Found: "+word
 		sys.exit(1)
 

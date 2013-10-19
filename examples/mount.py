@@ -28,19 +28,33 @@ import os
 from subprocess import *
 import stat
 import getpass
+import getopt
 
-if len(sys.argv) != 2:
-	print "Usage: python mount.py volumepath"
+hidden = False
+
+args = getopt.getopt(sys.argv[1:], "h")
+
+# parse cmdline options
+for k in args[0]:
+	if k[0]=='-h':
+		hidden = True
+
+if len(args[1]) != 1:
+	print "Usage: python mount.py [-h] volumepath"
+	print "Mount truecrypt volume"
+	print
+	print "  -h\tmount hidden volume"
+	print
 	sys.exit(1)
 
-FILENAME = sys.argv[1]
+FILENAME = args[1][0]
 PASSWORD = getpass.getpass("Enter password: ")
 
 #initialise pytruecrypt
 tc = PyTruecrypt(FILENAME)
 
 #open volume (returns false on failure)
-if not tc.open(PASSWORD, hidden=False):
+if not tc.open(PASSWORD, hidden=hidden):
 	print "Failed to open volume -maybe incorrect pw"
 	sys.exit(1)
 
