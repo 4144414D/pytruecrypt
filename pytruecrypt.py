@@ -42,31 +42,43 @@ class PyTruecrypt:
 	
 		self.valid = True
 
-		# Load primary and secondary key and decrypt first sector
+		# Load primary and secondary key
 		self.keys = {'key': self.hdr_decoded.Keys[0:32], 'xtskey': self.hdr_decoded.Keys[32:64]}
 		self.mainaes = AES.new(self.keys['key'], AES.MODE_ECB)
 		self.mainaesxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
 
 		return True
 
+	#decoded header is python dict
 	def getHeader(self):
 		if not self.valid:
 			return False
 		return self.hdr_decoded._asdict()
 
+	# Raw plaintext header
 	def getHeaderRaw(self):
 		if not self.valid:
 			return False
 		return self.tchdr_plain
 
+	# Gets plaintext sector from data section
 	def getPlainSector(self, sector):
 		if not self.valid:
 			return False
-		self.fd.seek(self.hdr_decoded.DataStart + sector*512)
-		return self._decrypt_sector(self.mainaes, self.mainaesxts, 256 + sector, self.fd.read(512))
+		secstart = self.hdr_decoded.DataStart / 512
+		self.fd.seek((secstart + sector)*512)
+		return self._decrypt_sector(self.mainaes, self.mainaesxts, secstart + sector, self.fd.read(512))
+
+	# get linux device mapper table to allow easy mounting
+	def getDeviceMapperTable(self, loopdevice):
+		secstart = self.hdr_decoded.DataStart / 512
+		size = self.hdr_decoded.DataSize / 512
+		return "0 %d crypt aes-xts-plain64 %s %d %s %d" % (size, binascii.hexlify(self.keys['key']+self.keys['xtskey']), secstart, loopdevice, secstart)
+
 
 	# Decrypts a sector, given pycrypto aes object for master key plus xts key
 	# Offset for partial sector decrypts (e.g. hdr)
+	# internal function
 	def _decrypt_sector(self, aes, aesxts, sector, ciphertext, offset=0):
 		# Encrypt IV to produce XTS tweak
 		ek2n = aesxts.encrypt(inttoLE(sector))
@@ -87,10 +99,6 @@ class PyTruecrypt:
 
 		return tc_plain
 
-	def getDeviceMapperTable(self, loopdevice):
-		secstart = self.hdr_decoded.DataStart / 512
-		size = self.hdr_decoded.DataSize / 512
-		return "0 %d crypt aes-xts-plain64 %s %d %s %d" % (size, binascii.hexlify(self.keys['key']+self.keys['xtskey']), secstart, loopdevice, secstart)
 		
 
 
