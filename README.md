@@ -7,8 +7,12 @@ Current status:
 - Decrypts header (can dump raw decrypted header)
 - Decodes header fields
 - Can dump any decrypted sector
-- Mounts volume on linux using device mapper
 - Easy to use - see example and source code for API
+
+Examples:
+- Mounts volume on linux using device mapper
+- Password cracker
+- Header and sector decrypted hex dump
 
 TODO: 
 - add more options  
