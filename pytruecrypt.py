@@ -7,87 +7,90 @@ import binascii
 import struct 
 from util import *
 
-# Decrypts a sector, given pycrypto aes object for master key plus xts key
-# Offset for partial sector decrypts (e.g. hdr)
-def decrypt_sector(aes, aesxts, sector, ciphertext, offset=0):
-	# Encrypt IV to produce XTS tweak
-	ek2n = aesxts.encrypt(inttoLE(sector))
+class PyTruecrypt:
+	def __init__(self, filename, password):
+		self.fn = filename
+		self.pw = password
+		self.valid = False
 
-	tc_plain = ''
-	for i in range(offset, 512, 16):
-		# Decrypt and apply tweak according to XTS scheme
-		# pt = Dec(ct ^ ek2n) ^ ek2n
-		ptext = xor( aes.decrypt( xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
-		tc_plain += ptext
+	def open(self):
+		self.fd = open(self.fn, "rb")
+		self.tchdr_ciphered = self.fd.read(512)
+		self.salt = self.tchdr_ciphered[0:64]
+		self.hdrkeys = None
 
-		# exponentiate tweak for next block (multiply by two in finite field)
-		ek2n_i = LEtoint(ek2n)		           # Little Endian to python int
-		ek2n_i = (ek2n_i << 1)			   # multiply by two using left shift
-		if ek2n_i & (1<<128):			   # correct for carry
-			ek2n_i ^= 0x87
-		ek2n = inttoLE(ek2n_i)			   # python into to Little Endian (ignoring bits >128)
+		# Header key derivation
+		pwhash = PBKDF2(self.pw, self.salt, 64, count=2000, prf=lambda p,s: HMAC.new(p,s,RIPEMD).digest())
 
-	return tc_plain
+		#Header keys
+		self.hdrkeys = { 'key':pwhash[0:32], 'xtskey':pwhash[32:64] }
+		
+		#pycrypto objects
+		self.hdraes = AES.new(self.hdrkeys['key'], AES.MODE_ECB)
+		self.hdraesxts = AES.new(self.hdrkeys['xtskey'], AES.MODE_ECB)
+		
+		#decrypt header
+		self.tchdr_plain = self._decrypt_sector(self.hdraes, self.hdraesxts, 0, self.tchdr_ciphered, 64)
 
+		#check correct decryption
+		if self.tchdr_plain[0:4] != "TRUE":
+			return False
 
-################## CODE START ######################
-
-# Usage
-if len(sys.argv) != 3:
-	print "pytruecrypt.py filename password"
-	sys.exit(0)
+		#Decode header into struct/namedtuple
+		TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
+		self.hdr_decoded = TCHDR._make(struct.unpack(">4sH", self.tchdr_plain[0:6]) + struct.unpack("<H", self.tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", self.tchdr_plain[8:448]))
 	
-# Open file and read header
-inf = open(sys.argv[1], "rb")
-tchdr = inf.read(131072)
+		self.valid = True
 
-# First 64 bytes are salt
-salt = tchdr[0:64]
-#sys.stderr.write( "SALT: "+binascii.hexlify(salt)+"\n")
+		# Load primary and secondary key and decrypt first sector
+		self.keys = {'key': self.hdr_decoded.Keys[0:32], 'xtskey': self.hdr_decoded.Keys[32:64]}
+		self.mainaes = AES.new(self.keys['key'], AES.MODE_ECB)
+		self.mainaesxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
 
-# Generate header keys
-pwhash= PBKDF2(sys.argv[2], salt, 64, count=2000, prf=lambda p,s: HMAC.new(p,s,RIPEMD).digest())
-aeskey = pwhash[0:32]
-xtskey = pwhash[32:64]
-print "Hdr keys:", binascii.hexlify(aeskey+xtskey)
+		return True
 
-# Load hdr keys into pycrypto
-aes = AES.new(aeskey, AES.MODE_ECB)
-aesxts = AES.new(xtskey, AES.MODE_ECB)
+	def getHeader(self):
+		if not self.valid:
+			return False
+		return self.hdr_decoded._asdict()
 
-# decrypt header
-print "Plaintext header"
-tchdr_plain = decrypt_sector(aes, aesxts, 0, tchdr, 64)
+	def getHeaderRaw(self):
+		if not self.valid:
+			return False
+		return self.tchdr_plain
 
-# dump header to screen
-print hexdump(tchdr_plain)
+	def getPlainSector(self, sector):
+		if not self.valid:
+			return False
+		self.fd.seek(self.hdr_decoded.DataStart + sector*512)
+		return self._decrypt_sector(self.mainaes, self.mainaesxts, 256 + sector, self.fd.read(512))
 
-# Dump rest of header - normally random data
-#for i in range(1, 256):
-#	tc_plain = decrypt_sector(aes, aesxts, i, tchdr[i*512:])
-#	sys.stdout.write(tc_plain)
+	# Decrypts a sector, given pycrypto aes object for master key plus xts key
+	# Offset for partial sector decrypts (e.g. hdr)
+	def _decrypt_sector(self, aes, aesxts, sector, ciphertext, offset=0):
+		# Encrypt IV to produce XTS tweak
+		ek2n = aesxts.encrypt(inttoLE(sector))
 
-# Parse first few fields of header
+		tc_plain = ''
+		for i in range(offset, 512, 16):
+			# Decrypt and apply tweak according to XTS scheme
+			# pt = Dec(ct ^ ek2n) ^ ek2n
+			ptext = xor( aes.decrypt( xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
+			tc_plain += ptext
 
-# Parse header using python's struct and print out fields
-print "Parsed header"
-TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
-hdr_decoded = struct.unpack(">4sH", tchdr_plain[0:6]) + struct.unpack("<H", tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", tchdr_plain[8:448])
-print
+			# exponentiate tweak for next block (multiply by two in finite field)
+			ek2n_i = LEtoint(ek2n)		           # Little Endian to python int
+			ek2n_i = (ek2n_i << 1)			   # multiply by two using left shift
+			if ek2n_i & (1<<128):			   # correct for carry
+				ek2n_i ^= 0x87
+			ek2n = inttoLE(ek2n_i)			   # python into to Little Endian (ignoring bits >128)
 
-hdrstruct = TCHDR._make(hdr_decoded)
+		return tc_plain
 
-print hdrstruct
+	def getDeviceMapperTable(self, loopdevice):
+		secstart = self.hdr_decoded.DataStart / 512
+		size = self.hdr_decoded.DataSize / 512
+		return "0 %d crypt aes-xts-plain64 %s %d %s %d" % (size, binascii.hexlify(self.keys['key']+self.keys['xtskey']), secstart, loopdevice, secstart)
+		
 
-# Print Primary and Secondary keys for AES-XTS of main data
-print "KEYS:", binascii.hexlify(hdrstruct.Keys[0:64])
-
-# Load primary and secondary key and decrypt first sector
-aes = AES.new(hdrstruct.Keys[0:32], AES.MODE_ECB)
-aesxts = AES.new(hdrstruct.Keys[32:64], AES.MODE_ECB)
-
-print
-print "FIRST SECTOR"
-# note IV for first sector = actual sector number (not minus header) = 256
-print hexdump(decrypt_sector(aes, aesxts, 256, inf.read(512), 0))
 
