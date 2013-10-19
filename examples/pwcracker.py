@@ -19,14 +19,12 @@ FILENAME = sys.argv[1]
 # open word list
 fdwords = open(sys.argv[2], "r")
 
+#initialise pytruecrypt
 tc = PyTruecrypt(FILENAME)
 
 # loop through words
 for line in fdwords.readlines():
 	word = line.strip()
-
-	#initialise pytruecrypt
-
 
 	#open volume (returns false on failure)
 	if tc.open(word, decode=False, hidden=False):
