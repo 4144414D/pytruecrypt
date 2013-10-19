@@ -11,7 +11,7 @@ import stat
 import getpass
 
 if len(sys.argv) != 3:
-	print "Usage: python mount.py volumepath wordlist"
+	print "Usage: python pwcracker.py volumepath wordlist"
 	sys.exit(1)
 
 FILENAME = sys.argv[1]
