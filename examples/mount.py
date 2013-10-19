@@ -31,6 +31,7 @@ import getpass
 import getopt
 
 hidden = False
+unmount = False
 
 args = getopt.getopt(sys.argv[1:], "h")
 
@@ -38,6 +39,8 @@ args = getopt.getopt(sys.argv[1:], "h")
 for k in args[0]:
 	if k[0]=='-h':
 		hidden = True
+#	if k[0]=='-u':
+#		unmount = True
 
 if len(args[1]) != 2:
 	print "Usage: python mount.py [-h] volumepath dmname"
@@ -53,6 +56,11 @@ FILENAME = args[1][0]
 PASSWORD = getpass.getpass("Enter password: ")
 DMNAME = args[1][1]
 
+#if unmount:
+	#todo
+	# remove loopback
+#	os.system("losetup -d `sudo losetup -a | grep '%s' | cut -d ':' -f 1`" % (FILENAME))
+
 #initialise pytruecrypt
 tc = PyTruecrypt(FILENAME)
 
@@ -63,17 +71,20 @@ if not tc.open(PASSWORD, hidden=hidden):
 
 #if root - mount it
 if os.getuid() == 0:
-	#find a free loopback device
-	child = Popen("losetup -f", shell=True, stdout=PIPE)
-	output, errors = child.communicate();
-	freeLoopback = output.strip()
+	devName = FILENAME
+	
+	# if not block device - use loopback
+	if not stat.S_ISBLK(os.stat(devName).st_mode):
+		#find a free loopback device
+		child = Popen("losetup -f", shell=True, stdout=PIPE)
+		output, errors = child.communicate();
+		devName = output.strip()
 
-	#setup loopback
-	os.system("losetup %s %s" % (freeLoopback, FILENAME))
+		#setup loopback
+		os.system("losetup %s %s" % (devName, FILENAME))
 
 	#setup linux device mapper so can mount volume
-	dmtable = tc.getDeviceMapperTable(freeLoopback)
-
+	dmtable = tc.getDeviceMapperTable(devName)
 
 	#create dm target /dev/mapper/tcrypt
 #	print "Device mapper table"
