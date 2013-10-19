@@ -7,6 +7,7 @@ Current status:
 - Decrypts header (can dump raw decrypted header)
 - Decodes header fields
 - Can dump any decrypted sector
+- Hidden volume support
 - Easy to use - see example and source code for API
 
 Examples:
