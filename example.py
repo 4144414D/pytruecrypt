@@ -46,7 +46,7 @@ if os.getuid() == 0:
 	#create dm target /dev/mapper/tcrypt
 	os.system('echo %s | dmsetup create tcrypt' % (dmtable))
 
-	print "Tcryptdevice on /dev/maper/tcrypt - you may now mount it"
+	print "Tcryptdevice on /dev/mapper/tcrypt - you may now mount it"
 	#You may now have to mount this manually if your linux doesn't automatically)
 	# mount /dev/mapper/tcrypt wheretomount
 

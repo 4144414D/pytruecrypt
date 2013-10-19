@@ -4,16 +4,23 @@ pytruecrypt
 Truecrypt volume parsing library by Gareth Owen, University of Portsmouth  
   
 Current status: 
-- Dumps decrypted header
+- Decrypts header (can dump raw decrypted header)
 - Decodes header fields
-- Dumps decrypted first sector
+- Can dump any decrypted sector
 - Mounts volume on linux using device mapper
 - Easy to use - see example and source code for API
 
 TODO: 
 - add more options  
+
+PREREQUISITES:
+You must have pycrypto installed (python-pycryptopp on most distros)
   
-Example usage:  
+DOCUMENTATION:
+
+Very little as the code is compact. See the example, and pytruecrypt.py - the comments show how to use it.
+
+EXAMPLE USAGE:  
   
 See example.py - it will try to decrypt and mount volume on linux
   
@@ -72,6 +79,6 @@ Example output:
 	01f0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 55 aa   ..............U.  
 	  
 	0 9728 crypt aes-xts-plain64 9957787da1014346895b4fc2ceafe00727819694f049b4fb9c74fae99e087312342f456f9db596a79bf8ef1dd46d542c0084ad9a1ebed3c1903ec96e59b2fc1d 256 /dev/loop0 256  
-	Tcryptdevice on /dev/maper/tcrypt - you may now mount it  
+	Tcryptdevice on /dev/mapper/tcrypt - you may now mount it  
 	  
 
