@@ -1,3 +1,7 @@
+# Truecrypt parsing library for Python by Gareth Owen
+# https://github.com/drgowen/pytruecrypt/
+# See LICENCE for licence details
+
 from collections import namedtuple
 import sys
 from Crypto.Protocol.KDF import *

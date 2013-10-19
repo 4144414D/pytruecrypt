@@ -1,3 +1,9 @@
+# Truecrypt parsing library for Python by Gareth Owen
+# https://github.com/drgowen/pytruecrypt/
+# See LICENCE for licence details
+
+# Truecrypt volume mounter for Linux
+
 import sys
 
 sys.path.append("..")

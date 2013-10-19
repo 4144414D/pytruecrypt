@@ -1,7 +1,12 @@
+# Truecrypt parsing library for Python by Gareth Owen
+# https://github.com/drgowen/pytruecrypt/
+# See LICENCE for licence details
+
+# Truecrypt password cracker
+
 import sys
 
 sys.path.append("..")
-
 
 from pytruecrypt import *
 import binascii
