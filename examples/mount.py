@@ -21,7 +21,7 @@ PASSWORD = getpass.getpass("Enter password: ")
 tc = PyTruecrypt(FILENAME)
 
 #open volume (returns false on failure)
-if not tc.open(PASSWORD):
+if not tc.open(PASSWORD, hidden=False):
 	print "Failed to open volume -maybe incorrect pw"
 	sys.exit(1)
 

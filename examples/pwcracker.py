@@ -29,7 +29,7 @@ for line in fdwords.readlines():
 
 
 	#open volume (returns false on failure)
-	if tc.open(word, decode=False):
+	if tc.open(word, decode=False, hidden=False):
 		print "PW Found: "+word
 		sys.exit(1)
 
