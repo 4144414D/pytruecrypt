@@ -22,11 +22,9 @@ Very little as the code is compact. See the example, and pytruecrypt.py - the co
 
 EXAMPLE USAGE:  
   
-See example.py - it will try to decrypt and mount volume on linux
+See examples - they take tcrypt volume as only argument
   
-Example output:  
-
-	gho@gho-linux:~/pytruecrypt$ sudo python example.py 
+Example capabilities:  
 
 	HEADER ------------  
 	Magic : TRUE  
