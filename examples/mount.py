@@ -39,16 +39,19 @@ for k in args[0]:
 	if k[0]=='-h':
 		hidden = True
 
-if len(args[1]) != 1:
-	print "Usage: python mount.py [-h] volumepath"
+if len(args[1]) != 2:
+	print "Usage: python mount.py [-h] volumepath dmname"
 	print "Mount truecrypt volume"
 	print
-	print "  -h\tmount hidden volume"
+	print "  volumepath\tTruecrypt volume file/device"
+	print "  dmname\tDevice mapper name (/dev/mapper/dmname) to map to (e.g. tcrypt)"
+	print "  -h\t\tmount hidden volume"
 	print
 	sys.exit(1)
 
 FILENAME = args[1][0]
 PASSWORD = getpass.getpass("Enter password: ")
+DMNAME = args[1][1]
 
 #initialise pytruecrypt
 tc = PyTruecrypt(FILENAME)
@@ -70,19 +73,21 @@ if os.getuid() == 0:
 
 	#setup linux device mapper so can mount volume
 	dmtable = tc.getDeviceMapperTable(freeLoopback)
-	print dmtable
+
 
 	#create dm target /dev/mapper/tcrypt
-	print "Device mapper table"
-	os.system('echo %s | dmsetup create tcrypt' % (dmtable))
+#	print "Device mapper table"
+#	print dmtable
 
-	print "Tcryptdevice on /dev/mapper/tcrypt - you may now mount it"
+	os.system('echo %s | dmsetup create %s' % (dmtable, DMNAME))
+
+	print "Tcryptdevice on /dev/mapper/"+DMNAME+" - you may now mount it"
 	#You may now have to mount this manually if your linux doesn't automatically)
 	# mount /dev/mapper/tcrypt wheretomount
 
 	#to undo
 	#unmount
-	#dmsetup remove tcrypt
+	#dmsetup remove dmname
 	#losetup -d /dev/loop0
 else:
 	print "Must be root to mount"

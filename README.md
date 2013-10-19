@@ -3,7 +3,7 @@ pytruecrypt
   
 Truecrypt volume parsing library by Gareth Owen, University of Portsmouth  
   
-Current status: 
+Library status: 
 - Decrypts header (can dump raw decrypted header)
 - Decodes header fields
 - Can dump any decrypted sector
@@ -11,9 +11,9 @@ Current status:
 - Easy to use - see example and source code for API
 
 Examples:
-- Mounts volume on linux using device mapper
-- Password cracker
-- Header and sector decrypted hex dump
+- mount.py: Mount volume on linux using device mapper
+- pwcrack.py: Password cracker
+- dump.py: Header and sector decrypted hex dump
 
 TODO: 
 - add more options  
@@ -23,11 +23,17 @@ You must have pycrypto installed (python-pycryptopp on most distros)
   
 DOCUMENTATION:
 
-Very little as the code is compact. See the example, and pytruecrypt.py - the comments show how to use it.
+Very little as the code is compact. See the examples, and pytruecrypt.py - the comments show how to use it.
 
 EXAMPLE USAGE:  
-  
-See examples - they take tcrypt volume as only argument
+
+Use -h for a hidden volume
+
+	mount.py [-h] volumename dmname
+
+	pwcrack.py [-h] volumename wordlist
+
+	dump.py [-h] volumename
   
 Example capabilities:  
 
