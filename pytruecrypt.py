@@ -8,13 +8,15 @@ import struct
 from util import *
 
 class PyTruecrypt:
-	def __init__(self, filename, password):
+	def __init__(self, filename):
 		self.fn = filename
-		self.pw = password
+
 		self.valid = False
 
-	def open(self):
+	def open(self, password, hidden=False, decode=True):
+		self.pw = password
 		self.fd = open(self.fn, "rb")
+		self.fd.seek(0 if not hidden else 65536)
 		self.tchdr_ciphered = self.fd.read(512)
 		self.salt = self.tchdr_ciphered[0:64]
 		self.hdrkeys = None
@@ -36,16 +38,17 @@ class PyTruecrypt:
 		if self.tchdr_plain[0:4] != "TRUE":
 			return False
 
-		#Decode header into struct/namedtuple
-		TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
-		self.hdr_decoded = TCHDR._make(struct.unpack(">4sH", self.tchdr_plain[0:6]) + struct.unpack("<H", self.tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", self.tchdr_plain[8:448]))
+		if decode:
+			#Decode header into struct/namedtuple
+			TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
+			self.hdr_decoded = TCHDR._make(struct.unpack(">4sH", self.tchdr_plain[0:6]) + struct.unpack("<H", self.tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", self.tchdr_plain[8:448]))
 	
-		self.valid = True
+			self.valid = True
 
-		# Load primary and secondary key
-		self.keys = {'key': self.hdr_decoded.Keys[0:32], 'xtskey': self.hdr_decoded.Keys[32:64]}
-		self.mainaes = AES.new(self.keys['key'], AES.MODE_ECB)
-		self.mainaesxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
+			# Load primary and secondary key
+			self.keys = {'key': self.hdr_decoded.Keys[0:32], 'xtskey': self.hdr_decoded.Keys[32:64]}
+			self.mainaes = AES.new(self.keys['key'], AES.MODE_ECB)
+			self.mainaesxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
 
 		return True
 

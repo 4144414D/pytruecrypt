@@ -18,10 +18,10 @@ FILENAME = sys.argv[1]
 PASSWORD = getpass.getpass("Enter password: ")
 
 #initialise pytruecrypt
-tc = PyTruecrypt(FILENAME, PASSWORD)
+tc = PyTruecrypt(FILENAME)
 
 #open volume (returns false on failure)
-if not tc.open():
+if not tc.open(PASSWORD):
 	print "Failed to open volume -maybe incorrect pw"
 	sys.exit(1)
 
