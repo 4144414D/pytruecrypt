@@ -1,10 +1,21 @@
+import sys
+
+sys.path.append("..")
+
+
 from pytruecrypt import *
 import binascii
 import os
 from subprocess import *
+import stat
+import getpass
 
-FILENAME = "/home/gho/test.tc"
-PASSWORD = "abc123"
+if len(sys.argv) != 2:
+	print "Usage: python mount.py volumepath"
+	sys.exit(1)
+
+FILENAME = sys.argv[1]
+PASSWORD = getpass.getpass("Enter password: ")
 
 #initialise pytruecrypt
 tc = PyTruecrypt(FILENAME, PASSWORD)
@@ -13,21 +24,6 @@ tc = PyTruecrypt(FILENAME, PASSWORD)
 if not tc.open():
 	print "Failed to open volume -maybe incorrect pw"
 	sys.exit(1)
-
-#Print header fields
-print "HEADER ------------"
-hdr = tc.getHeader()
-for k in hdr:
-	print k, ":", 
-
-	if k=="Keys":
-		print binascii.hexlify(hdr[k])	
-	else:	
-		print hdr[k]
-
-#Print first sector
-print "FIRST SECTOR-------"
-print hexdump(tc.getPlainSector(0))
 
 #if root - mount it
 if os.getuid() == 0:
@@ -44,6 +40,7 @@ if os.getuid() == 0:
 	print dmtable
 
 	#create dm target /dev/mapper/tcrypt
+	print "Device mapper table"
 	os.system('echo %s | dmsetup create tcrypt' % (dmtable))
 
 	print "Tcryptdevice on /dev/mapper/tcrypt - you may now mount it"
