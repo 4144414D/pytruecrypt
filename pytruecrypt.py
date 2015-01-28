@@ -25,9 +25,9 @@ import struct
 from util import *
 
 class PyTruecrypt:
-	def __init__(self, filename):
+	def __init__(self, filename, veracrypt=False):
 		self.fn = filename
-
+		self.veracrypt = veracrypt
 		self.valid = False
 
 	def open(self, password, hidden=False, decode=True):
@@ -39,8 +39,10 @@ class PyTruecrypt:
 		self.hdrkeys = None
 
 		# Header key derivation
-		pwhash = PBKDF2(self.pw, self.salt, 64, count=2000, prf=lambda p,s: HMAC.new(p,s,RIPEMD).digest())
-
+		number_rounds = (2000 if not self.veracrypt else 500000)
+		hash_func = (RIPEMD if not self.veracrypt else SHA512)
+		pwhash = PBKDF2(self.pw, self.salt, 64, count=number_rounds, prf=lambda p,s: HMAC.new(p,s,hash_func).digest())
+        
 		#Header keys
 		self.hdrkeys = { 'key':pwhash[0:32], 'xtskey':pwhash[32:64] }
 		
@@ -52,7 +54,9 @@ class PyTruecrypt:
 		self.tchdr_plain = self._decrypt_sector(self.hdraes, self.hdraesxts, 0, self.tchdr_ciphered, 64)
 
 		#check correct decryption
-		if self.tchdr_plain[0:4] != "TRUE":
+		magic_number = ("TRUE" if not self.veracrypt else "VERA")
+		if self.tchdr_plain[0:4] != magic_number:
+			print self.tchdr_plain[0:4]
 			return False
 
 		if decode:
