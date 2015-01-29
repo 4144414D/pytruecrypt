@@ -30,6 +30,15 @@ class PyTruecrypt:
 		self.veracrypt = veracrypt
 		self.valid = False
 
+	def open_with_key(self, key):
+		self.fd = open(self.fn, "rb")
+		if len(key) != 128:
+			return False
+		self.keys =  {'key' : binascii.unhexlify(key[:64]),'xtskey' : binascii.unhexlify(key[64:])}
+		self.mainaes = AES.new(self.keys['key'], AES.MODE_ECB)
+		self.mainaesxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
+		self.open_with_key = True
+	
 	def open(self, password, hidden=False, decode=True):
 		self.pw = password
 		self.fd = open(self.fn, "rb")
@@ -56,7 +65,6 @@ class PyTruecrypt:
 		#check correct decryption
 		magic_number = ("TRUE" if not self.veracrypt else "VERA")
 		if self.tchdr_plain[0:4] != magic_number:
-			print self.tchdr_plain[0:4]
 			return False
 
 		if decode:
@@ -86,10 +94,11 @@ class PyTruecrypt:
 		return self.tchdr_plain
 
 	# Gets plaintext sector from data section
-	def getPlainSector(self, sector):
-		if not self.valid:
+	def getPlainSector(self, sector, secstart=0):
+		if not (self.valid or (self.open_with_key and secstart > 0)):
 			return False
-		secstart = self.hdr_decoded.DataStart / 512
+		if self.valid: 
+			secstart = self.hdr_decoded.DataStart / 512
 		self.fd.seek((secstart + sector)*512)
 		return self._decrypt_sector(self.mainaes, self.mainaesxts, secstart + sector, self.fd.read(512))
 
@@ -122,7 +131,3 @@ class PyTruecrypt:
 			ek2n = inttoLE(ek2n_i)			   # python into to Little Endian (ignoring bits >128)
 
 		return tc_plain
-
-		
-
-
