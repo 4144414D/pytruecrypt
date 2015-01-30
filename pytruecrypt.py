@@ -31,9 +31,9 @@ class PyTruecrypt:
 		self.valid = False
 
 	def open_with_key(self, key):
-		self.fd = open(self.fn, "rb")
 		if len(key) != 128:
 			return False
+		self.fd = open(self.fn, "r+b")
 		self.keys =  {'key' : binascii.unhexlify(key[:64]),'xtskey' : binascii.unhexlify(key[64:])}
 		self.mainaes = AES.new(self.keys['key'], AES.MODE_ECB)
 		self.mainaesxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
@@ -41,7 +41,7 @@ class PyTruecrypt:
 	
 	def open(self, password, hidden=False, decode=True):
 		self.pw = password
-		self.fd = open(self.fn, "rb")
+		self.fd = open(self.fn, "r+b")
 		self.fd.seek(0 if not hidden else 65536)
 		self.tchdr_ciphered = self.fd.read(512)
 		self.salt = self.tchdr_ciphered[0:64]
@@ -101,9 +101,35 @@ class PyTruecrypt:
 			secstart = self.hdr_decoded.DataStart / 512
 		self.fd.seek((secstart + sector)*512)
 		return self._decrypt_sector(self.mainaes, self.mainaesxts, secstart + sector, self.fd.read(512))
-
+		
+	# Gets ciphertext sector from data input
+	def getCipherSector(self, sector, plaintext, secstart=0):
+		if not (self.valid or (self.open_with_key and secstart > 0)):
+			return False
+		if len(plaintext) != 512:
+			return False
+		if self.valid: 
+			secstart = self.hdr_decoded.DataStart / 512
+		return self._encrypt_sector(self.mainaes, self.mainaesxts, secstart + sector, plaintext)
+	
+	# Writes ciphertext sector from data input
+	def putCipherSector(self, sector, plaintext, secstart=0):
+		if not (self.valid or (self.open_with_key and secstart > 0)):
+			return False
+		if len(plaintext) != 512:
+			return False
+		if self.valid: 
+			secstart = self.hdr_decoded.DataStart / 512
+		cipherSector = self.getCipherSector(sector, plaintext, secstart)
+		
+		self.fd.seek((secstart  + sector) * 512)
+		self.fd.write(cipherSector)
+		
+		
 	# get linux device mapper table to allow easy mounting
 	def getDeviceMapperTable(self, loopdevice):
+		if not self.valid:
+			return False
 		secstart = self.hdr_decoded.DataStart / 512
 		size = self.hdr_decoded.DataSize / 512
 		return "0 %d crypt aes-xts-plain64 %s %d %s %d" % (size, binascii.hexlify(self.keys['key']+self.keys['xtskey']), secstart, loopdevice, secstart)
@@ -124,10 +150,30 @@ class PyTruecrypt:
 			tc_plain += ptext
 
 			# exponentiate tweak for next block (multiply by two in finite field)
-			ek2n_i = LEtoint(ek2n)		           # Little Endian to python int
+			ek2n_i = LEtoint(ek2n)		       # Little Endian to python int
 			ek2n_i = (ek2n_i << 1)			   # multiply by two using left shift
 			if ek2n_i & (1<<128):			   # correct for carry
 				ek2n_i ^= 0x87
 			ek2n = inttoLE(ek2n_i)			   # python into to Little Endian (ignoring bits >128)
 
 		return tc_plain
+		
+	def _encrypt_sector(self, aes, aesxts, sector, plaintext, offset=0):
+		# Encrypt IV to produce XTS tweak
+		ek2n = aesxts.encrypt(inttoLE(sector))
+
+		tc_cipher = ''
+		for i in range(offset, 512, 16):
+			# Decrypt and apply tweak according to XTS scheme
+			# pt = Dec(ct ^ ek2n) ^ ek2n
+			ctext = xor( aes.encrypt( xor(ek2n, plaintext[i:i+16]) ) , ek2n)
+			tc_cipher += ctext
+
+			# exponentiate tweak for next block (multiply by two in finite field)
+			ek2n_i = LEtoint(ek2n)		       # Little Endian to python int
+			ek2n_i = (ek2n_i << 1)			   # multiply by two using left shift
+			if ek2n_i & (1<<128):			   # correct for carry
+				ek2n_i ^= 0x87
+			ek2n = inttoLE(ek2n_i)			   # python into to Little Endian (ignoring bits >128)
+
+		return tc_cipher
