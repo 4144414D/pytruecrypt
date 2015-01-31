@@ -22,6 +22,7 @@ from Crypto.Hash import *
 from Crypto.Cipher import AES
 import binascii
 import struct 
+import os
 from util import *
 
 class PyTruecrypt:
@@ -39,10 +40,15 @@ class PyTruecrypt:
 		self.mainaesxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
 		self.open_with_key = True
 	
-	def open(self, password, hidden=False, decode=True):
+	def open(self, password, hidden=False, decode=True, backup=False):
 		self.pw = password
 		self.fd = open(self.fn, "r+b")
-		self.fd.seek(0 if not hidden else 65536)
+		self.fd.seek(0, os.SEEK_END)
+		size = self.fd.tell()
+		if backup:
+			self.fd.seek((size - 131072) if not hidden else (size - 65536))
+		else:
+			self.fd.seek(0 if not hidden else 65536)
 		self.tchdr_ciphered = self.fd.read(512)
 		self.salt = self.tchdr_ciphered[0:64]
 		self.hdrkeys = None
