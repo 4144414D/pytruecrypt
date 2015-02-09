@@ -139,8 +139,18 @@ class PyTruecrypt:
 		secstart = self.hdr_decoded.DataStart / 512
 		size = self.hdr_decoded.DataSize / 512
 		return "0 %d crypt aes-xts-plain64 %s %d %s %d" % (size, binascii.hexlify(self.keys['key']+self.keys['xtskey']), secstart, loopdevice, secstart)
-
-
+	
+	# checks if the store CRC32 in the header matches the calculated CRC32 header
+	def checkCRC32(self):
+		if not self.valid:
+			return False
+		calculatedCRC = struct.pack('>I',binascii.crc32(self.tchdr_plain[:188]) & 0xffffffff)
+		storedCRC = self.tchdr_plain[188:192]
+		if storedCRC == calculatedCRC:
+			self.validCRC = True
+		else:
+			self.validCRC = False
+	
 	# Decrypts a sector, given pycrypto aes object for master key plus xts key
 	# Offset for partial sector decrypts (e.g. hdr)
 	# internal function
