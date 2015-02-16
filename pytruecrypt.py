@@ -18,26 +18,29 @@
 from collections import namedtuple
 import sys
 from Crypto.Protocol.KDF import *
-from Crypto.Hash import *
-from Crypto.Cipher import AES
+from CryptoPlus.Hash import *
+from CryptoPlus.Cipher import AES
+from CryptoPlus.Cipher import python_Twofish as TwoFish
+from CryptoPlus.Cipher import python_Serpent as Serpent
 import binascii
 import struct 
 import os
 from util import *
 
 class PyTruecrypt:
-	def __init__(self, filename, veracrypt=False):
+	def __init__(self, filename, veracrypt=False, encryption="aes"):
 		self.fn = filename
 		self.veracrypt = veracrypt
 		self.valid = False
+		self.encryption = encryption
 
 	def open_with_key(self, key):
 		if len(key) != 128:
 			return False
 		self.fd = open(self.fn, "r+b")
 		self.keys =  {'key' : binascii.unhexlify(key[:64]),'xtskey' : binascii.unhexlify(key[64:])}
-		self.mainaes = AES.new(self.keys['key'], AES.MODE_ECB)
-		self.mainaesxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
+		self.mainenc = AES.new(self.keys['key'], AES.MODE_ECB)
+		self.mainencxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
 		self.open_with_key = True
 	
 	def open(self, password, hidden=False, decode=True, backup=False):
@@ -61,12 +64,13 @@ class PyTruecrypt:
 		#Header keys
 		self.hdrkeys = { 'key':pwhash[0:32], 'xtskey':pwhash[32:64] }
 		
-		#pycrypto objects
-		self.hdraes = AES.new(self.hdrkeys['key'], AES.MODE_ECB)
-		self.hdraesxts = AES.new(self.hdrkeys['xtskey'], AES.MODE_ECB)
+		#crypto objects
+		self.hdrenc = self._get_encryption_object(self.hdrkeys['key'])
+		self.hdrencxts = self._get_encryption_object(self.hdrkeys['xtskey'])
+		if not self.hdrenc or not self.hdrencxts: return False
 		
 		#decrypt header
-		self.tchdr_plain = self._decrypt_sector(self.hdraes, self.hdraesxts, 0, self.tchdr_ciphered, 64)
+		self.tchdr_plain = self._decrypt_sector(self.hdrenc, self.hdrencxts, 0, self.tchdr_ciphered, 64)
 
 		#check correct decryption
 		magic_number = ("TRUE" if not self.veracrypt else "VERA")
@@ -77,14 +81,12 @@ class PyTruecrypt:
 			#Decode header into struct/namedtuple
 			TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
 			self.hdr_decoded = TCHDR._make(struct.unpack(">4sH", self.tchdr_plain[0:6]) + struct.unpack("<H", self.tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", self.tchdr_plain[8:448]))
-	
 			self.valid = True
-
 			# Load primary and secondary key
 			self.keys = {'key': self.hdr_decoded.Keys[0:32], 'xtskey': self.hdr_decoded.Keys[32:64]}
-			self.mainaes = AES.new(self.keys['key'], AES.MODE_ECB)
-			self.mainaesxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
-
+			self.mainenc = self._get_encryption_object(self.keys['key'])
+			self.mainencxts = self._get_encryption_object(self.keys['xtskey'])
+			if not self.mainenc or not self.mainencxts: return False
 		return True
 
 	#decoded header is python dict
@@ -106,7 +108,7 @@ class PyTruecrypt:
 		if self.valid: 
 			secstart = self.hdr_decoded.DataStart / 512
 		self.fd.seek((secstart + sector)*512)
-		return self._decrypt_sector(self.mainaes, self.mainaesxts, secstart + sector, self.fd.read(512))
+		return self._decrypt_sector(self.mainenc, self.mainencxts, secstart + sector, self.fd.read(512))
 		
 	# Gets ciphertext sector from data input
 	def getCipherSector(self, sector, plaintext, secstart=0):
@@ -116,7 +118,7 @@ class PyTruecrypt:
 			return False
 		if self.valid: 
 			secstart = self.hdr_decoded.DataStart / 512
-		return self._encrypt_sector(self.mainaes, self.mainaesxts, secstart + sector, plaintext)
+		return self._encrypt_sector(self.mainenc, self.mainencxts, secstart + sector, plaintext)
 	
 	# Writes ciphertext sector from data input
 	def putCipherSector(self, sector, plaintext, secstart=0):
@@ -150,19 +152,30 @@ class PyTruecrypt:
 			self.validCRC = True
 		else:
 			self.validCRC = False
+
+	# internal function
+	def _get_encryption_object(self,key):
+		if self.encryption == "aes":
+			return AES.new(key, AES.MODE_ECB)
+		elif self.encryption == "serpent":
+			return Serpent.new(key, Serpent.MODE_ECB)
+		elif self.encryption == "twofish":
+			return TwoFish.new(key, TwoFish.MODE_ECB)
+		else:
+			return False
 	
 	# Decrypts a sector, given pycrypto aes object for master key plus xts key
 	# Offset for partial sector decrypts (e.g. hdr)
 	# internal function
-	def _decrypt_sector(self, aes, aesxts, sector, ciphertext, offset=0):
+	def _decrypt_sector(self, enc, encxts, sector, ciphertext, offset=0):
 		# Encrypt IV to produce XTS tweak
-		ek2n = aesxts.encrypt(inttoLE(sector))
+		ek2n = encxts.encrypt(inttoLE(sector))
 
 		tc_plain = ''
 		for i in range(offset, 512, 16):
 			# Decrypt and apply tweak according to XTS scheme
 			# pt = Dec(ct ^ ek2n) ^ ek2n
-			ptext = xor( aes.decrypt( xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
+			ptext = xor( enc.decrypt( xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
 			tc_plain += ptext
 
 			# exponentiate tweak for next block (multiply by two in finite field)
@@ -174,15 +187,16 @@ class PyTruecrypt:
 
 		return tc_plain
 		
-	def _encrypt_sector(self, aes, aesxts, sector, plaintext, offset=0):
+	def _encrypt_sector(self, enc, encxts, sector, plaintext, offset=0):
 		# Encrypt IV to produce XTS tweak
-		ek2n = aesxts.encrypt(inttoLE(sector))
+		ek2n = encxts.encrypt(inttoLE(sector))
 
 		tc_cipher = ''
+		print hexdump(plaintext)
 		for i in range(offset, 512, 16):
 			# Decrypt and apply tweak according to XTS scheme
 			# pt = Dec(ct ^ ek2n) ^ ek2n
-			ctext = xor( aes.encrypt( xor(ek2n, plaintext[i:i+16]) ) , ek2n)
+			ctext = xor( enc.encrypt( xor(ek2n, plaintext[i:i+16]) ) , ek2n)
 			tc_cipher += ctext
 
 			# exponentiate tweak for next block (multiply by two in finite field)
