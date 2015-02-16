@@ -39,9 +39,10 @@ class PyTruecrypt:
 			return False
 		self.fd = open(self.fn, "r+b")
 		self.keys =  {'key' : binascii.unhexlify(key[:64]),'xtskey' : binascii.unhexlify(key[64:])}
-		self.mainenc = AES.new(self.keys['key'], AES.MODE_ECB)
-		self.mainencxts = AES.new(self.keys['xtskey'], AES.MODE_ECB)
+		self.mainenc = self._get_encryption_object(self.keys['key'])
+		self.mainencxts = self._get_encryption_object(self.keys['xtskey'])
 		self.open_with_key = True
+		if not self.mainenc or not self.mainencxts: return False
 	
 	def open(self, password, hidden=False, decode=True, backup=False):
 		self.pw = password
