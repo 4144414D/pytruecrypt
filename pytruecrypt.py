@@ -18,8 +18,9 @@
 from collections import namedtuple
 import sys
 from Crypto.Protocol.KDF import *
-from CryptoPlus.Hash import *
-from CryptoPlus.Cipher import AES
+from Crypto.Hash import RIPEMD, SHA512
+from CryptoPlus.Hash import python_whirlpool as WHIRLPOOL
+from Crypto.Cipher import AES
 from CryptoPlus.Cipher import python_Twofish as TwoFish
 from CryptoPlus.Cipher import python_Serpent as Serpent
 import binascii
@@ -28,11 +29,28 @@ import os
 from util import *
 
 class PyTruecrypt:
-	def __init__(self, filename, veracrypt=False, encryption="aes"):
+	def __init__(self, filename, veracrypt=False, encryption="aes", hash_func="default"):
 		self.fn = filename
 		self.veracrypt = veracrypt
 		self.valid = False
 		self.encryption = encryption
+		
+		#set defaults 
+		if hash_func == "default" and not veracrypt:
+			hash_func == 'ripemd'
+		elif hash_func == "default" and veracrypt:
+			hash_func == 'sha512'
+		
+		#create pycrypto hash object
+		if hash_func == 'sha512':
+			self.hash_func = SHA512
+			self.hash_func_rounds = (1000 if not self.veracrypt else 500000) 
+		elif hash_func == 'ripemd':
+			self.hash_func = RIPEMD
+			self.hash_func_rounds = (2000 if not self.veracrypt else 500000)
+		elif hash_func == 'whirlpool':
+			self.hash_func = WHIRLPOOL
+			self.hash_func_rounds = (1000 if not self.veracrypt else 500000) 
 
 	def open_with_key(self, key):
 		if len(key) != 128:
@@ -58,9 +76,7 @@ class PyTruecrypt:
 		self.hdrkeys = None
 
 		# Header key derivation
-		number_rounds = (2000 if not self.veracrypt else 500000)
-		hash_func = (RIPEMD if not self.veracrypt else SHA512)
-		pwhash = PBKDF2(self.pw, self.salt, 64, count=number_rounds, prf=lambda p,s: HMAC.new(p,s,hash_func).digest())
+		pwhash = PBKDF2(self.pw, self.salt, 64, count=self.hash_func_rounds, prf=lambda p,s: HMAC.new(p,s,self.hash_func).digest())
         
 		#Header keys
 		self.hdrkeys = { 'key':pwhash[0:32], 'xtskey':pwhash[32:64] }
@@ -178,14 +194,7 @@ class PyTruecrypt:
 			# pt = Dec(ct ^ ek2n) ^ ek2n
 			ptext = xor( enc.decrypt( xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
 			tc_plain += ptext
-
-			# exponentiate tweak for next block (multiply by two in finite field)
-			ek2n_i = LEtoint(ek2n)		       # Little Endian to python int
-			ek2n_i = (ek2n_i << 1)			   # multiply by two using left shift
-			if ek2n_i & (1<<128):			   # correct for carry
-				ek2n_i ^= 0x87
-			ek2n = inttoLE(ek2n_i)			   # python into to Little Endian (ignoring bits >128)
-
+			ek2n = self._exponentiate_tweak(ek2n)
 		return tc_plain
 		
 	def _encrypt_sector(self, enc, encxts, sector, plaintext, offset=0):
@@ -199,12 +208,13 @@ class PyTruecrypt:
 			# pt = Dec(ct ^ ek2n) ^ ek2n
 			ctext = xor( enc.encrypt( xor(ek2n, plaintext[i:i+16]) ) , ek2n)
 			tc_cipher += ctext
-
-			# exponentiate tweak for next block (multiply by two in finite field)
-			ek2n_i = LEtoint(ek2n)		       # Little Endian to python int
-			ek2n_i = (ek2n_i << 1)			   # multiply by two using left shift
-			if ek2n_i & (1<<128):			   # correct for carry
-				ek2n_i ^= 0x87
-			ek2n = inttoLE(ek2n_i)			   # python into to Little Endian (ignoring bits >128)
-
+			ek2n = self._exponentiate_tweak(ek2n)
 		return tc_cipher
+	
+	# exponentiate tweak for next block (multiply by two in finite field)
+	def _exponentiate_tweak(self, ek2n):
+		ek2n_i = LEtoint(ek2n)		       # Little Endian to python int
+		ek2n_i = (ek2n_i << 1)			   # multiply by two using left shift
+		if ek2n_i & (1<<128):			   # correct for carry
+			ek2n_i ^= 0x87
+		return inttoLE(ek2n_i)
