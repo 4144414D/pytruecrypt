@@ -25,21 +25,27 @@ if __name__ == '__main__':
 		for vera in veraoptions:
 			for hidden in [False,True]:
 				for backup in [False,True]:
-					tc = PyTruecrypt(arguments['<file>'], vera)
-					if tc.open(password,hidden=hidden,backup=backup):
-						print password,
-						print 'appears to be valid for a',
-						print ('TrueCrypt' if not vera else 'VeraCrypt'),
-						print ('standard' if not hidden else 'hidden'),
-						print 'volume using the',
-						print ('normal' if not backup else 'backup'),
-						print 'header'
-						if arguments['--decode']:
-							header = tc.getHeader()
-							for k in header:
-								print k, ":", 
-								if k=="Keys":
-									print binascii.hexlify(header[k])	
-								else:	
-									print header[k]
-							print
+					for hash in ['ripemd','sha512','whirlpool']:
+						for crypto in ['aes','serpent','twofish']:
+							tc = PyTruecrypt(arguments['<file>'], vera, encryption=crypto,hash_func=hash)
+							if tc.open(password,hidden=hidden,backup=backup):
+								print password,
+								print 'appears to be valid for a',
+								print ('TrueCrypt' if not vera else 'VeraCrypt'),
+								print ('standard' if not hidden else 'hidden'),
+								print 'volume using the',
+								print ('normal' if not backup else 'backup'),
+								print 'header',
+								print 'using',
+								print crypto,
+								print 'and',
+								print hash
+								if arguments['--decode']:
+									header = tc.getHeader()
+									for k in header:
+										print k, ":", 
+										if k=="Keys":
+											print binascii.hexlify(header[k])	
+										else:	
+											print header[k]
+									print
