@@ -37,9 +37,9 @@ class PyTruecrypt:
 		
 		#set defaults 
 		if hash_func == "default" and not veracrypt:
-			hash_func == 'ripemd'
+			hash_func = 'ripemd'
 		elif hash_func == "default" and veracrypt:
-			hash_func == 'sha512'
+			hash_func = 'sha512'
 		
 		#create pycrypto hash object
 		if hash_func == 'sha512':
@@ -92,19 +92,24 @@ class PyTruecrypt:
 		#check correct decryption
 		magic_number = ("TRUE" if not self.veracrypt else "VERA")
 		if self.tchdr_plain[0:4] != magic_number:
-			return False
+			self.valid = False
 
 		if decode:
 			#Decode header into struct/namedtuple
 			TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
 			self.hdr_decoded = TCHDR._make(struct.unpack(">4sH", self.tchdr_plain[0:6]) + struct.unpack("<H", self.tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", self.tchdr_plain[8:448]))
-			self.valid = True
+			
 			# Load primary and secondary key
 			self.keys = {'key': self.hdr_decoded.Keys[0:32], 'xtskey': self.hdr_decoded.Keys[32:64]}
 			self.mainenc = self._get_encryption_object(self.keys['key'])
 			self.mainencxts = self._get_encryption_object(self.keys['xtskey'])
 			if not self.mainenc or not self.mainencxts: return False
-		return True
+			self.valid = True
+		self.checkCRC32()
+		if self.valid and self.validCRC: 
+			return True
+		else:
+			return False
 
 	#decoded header is python dict
 	def getHeader(self):
@@ -146,10 +151,8 @@ class PyTruecrypt:
 		if self.valid: 
 			secstart = self.hdr_decoded.DataStart / 512
 		cipherSector = self.getCipherSector(sector, plaintext, secstart)
-		
 		self.fd.seek((secstart  + sector) * 512)
 		self.fd.write(cipherSector)
-		
 		
 	# get linux device mapper table to allow easy mounting
 	def getDeviceMapperTable(self, loopdevice):
