@@ -106,7 +106,7 @@ class PyTruecrypt:
 			if not self.mainenc or not self.mainencxts: return False
 			self.valid = True
 		self.checkCRC32()
-		if self.valid and self.validCRC: 
+		if self.valid and self.valid_HeaderCRC and self.valid_KeyCRC: 
 			return True
 		else:
 			return False
@@ -162,16 +162,19 @@ class PyTruecrypt:
 		size = self.hdr_decoded.DataSize / 512
 		return "0 %d crypt aes-xts-plain64 %s %d %s %d" % (size, binascii.hexlify(self.keys['key']+self.keys['xtskey']), secstart, loopdevice, secstart)
 	
+	# checks if the CRC32 of bytes matches the target CRC32
+	def calculateCRC32(self,bytes,target):
+		if struct.pack('>I',binascii.crc32(bytes) & 0xffffffff) == target:
+			return True
+		else:
+			return False
+	
 	# checks if the store CRC32 in the header matches the calculated CRC32 header
 	def checkCRC32(self):
 		if not self.valid:
 			return False
-		calculatedCRC = struct.pack('>I',binascii.crc32(self.tchdr_plain[:188]) & 0xffffffff)
-		storedCRC = self.tchdr_plain[188:192]
-		if storedCRC == calculatedCRC:
-			self.validCRC = True
-		else:
-			self.validCRC = False
+		self.valid_HeaderCRC = self.calculateCRC32(self.tchdr_plain[:188],self.tchdr_plain[188:192])
+		self.valid_KeyCRC = self.calculateCRC32(self.tchdr_plain[192:],self.tchdr_plain[8:12])
 
 	# internal function
 	def _get_encryption_object(self,key):
