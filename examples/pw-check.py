@@ -26,7 +26,7 @@ if __name__ == '__main__':
 			for hidden in [False,True]:
 				for backup in [False,True]:
 					for hash in ['ripemd','sha512','whirlpool']:
-						for crypto in ['aes','serpent','twofish']:
+						for crypto in [["aes"],["aes","twofish"],["aes","twofish","serpent"],["serpent"],["serpent","aes"],["serpent","twofish","aes"],["twofish"],["twofish","serpent"]]:
 							tc = PyTruecrypt(arguments['<file>'], vera, encryption=crypto,hash_func=hash)
 							if tc.open(password,hidden=hidden,backup=backup):
 								print password,
