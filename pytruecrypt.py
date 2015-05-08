@@ -28,12 +28,51 @@ import struct
 import os
 from util import *
 
+class encObject:
+	"""pycrypto objects used by PyTruecrypt"""
+	def __init__(self, type):
+		self.keys = None
+		self.enc = None
+		self.encxts = None
+		self.type = type
+	
+	def set_keys(self, key):
+		#keys = {'key' : binascii.unhexlify(key[:64]),'xtskey' : binascii.unhexlify(key[64:])}
+		keys = {'key' : key[:32],'xtskey' : key[32:]}
+		self.keys = keys
+		self.enc = self._get_encryption_object(self.keys['key'])
+		self.encxts = self._get_encryption_object(self.keys['xtskey'])
+	
+	def _get_encryption_object(self,key):
+		if self.type == "aes":
+			return AES.new(key, AES.MODE_ECB)
+		elif self.type == "serpent":
+			return Serpent.new(key, Serpent.MODE_ECB)
+		elif self.type == "twofish":
+			return TwoFish.new(key, TwoFish.MODE_ECB)
+		else:
+			return False
+
 class PyTruecrypt:
-	def __init__(self, filename, veracrypt=False, encryption="aes", hash_func="default"):
+	def __init__(self, filename, veracrypt=False, encryption=["aes"], hash_func="default"):
 		self.fn = filename
 		self.veracrypt = veracrypt
 		self.valid = False
-		self.encryption = encryption
+		self.encryption_mode = encryption #aes, serpent, twofish, aes-twofish, aes-twofish-serpent, serpent-aes, serpent-aes-twofish, twofish-serpent
+		
+		
+		#check viable encryption_mode chosen
+		if self.encryption_mode not in [["aes"],["aes","twofish"],["aes","twofish","serpent"],["serpent"],["serpent","aes"],["serpent","twofish","aes"],["twofish"],["twofish","serpent"]]:
+			print "Incorrect encryption mode selected"
+			return False
+		
+		#create encryption objects, encryption must be a list of the cipher(s) used in order. Note that the TrueCrypt documentation is incorrect. 
+		self.hdrenc = {}
+		self.dataenc = {}
+		for mode in encryption:
+			if mode in ['aes','twofish','serpent']:
+				self.hdrenc[mode] = encObject(mode)
+				self.dataenc[mode] = encObject(mode)
 		
 		#set defaults 
 		if hash_func == "default" and not veracrypt:
@@ -52,60 +91,93 @@ class PyTruecrypt:
 			self.hash_func = WHIRLPOOL
 			self.hash_func_rounds = (1000 if not self.veracrypt else 500000) 
 
-	def open_with_key(self, key):
-		if len(key) != 128:
-			return False
+	def open_with_key(self, aes_key=None, twofish_key=None, serpent_key=None):
 		self.fd = open(self.fn, "r+b")
-		self.keys =  {'key' : binascii.unhexlify(key[:64]),'xtskey' : binascii.unhexlify(key[64:])}
-		self.mainenc = self._get_encryption_object(self.keys['key'])
-		self.mainencxts = self._get_encryption_object(self.keys['xtskey'])
+		if aes_key: self.enc['aes'].set_keys(aes_key)
+		if twofish_key: self.enc['twofish'].set_keys(twofish_key)
+		if serpent_key: self.enc['serpent'].set_keys(serpent_key)
 		self.open_with_key = True
-		if not self.mainenc or not self.mainencxts: return False
 	
 	def open(self, password, hidden=False, decode=True, backup=False):
 		self.pw = password
+		
+		#open container as file object
 		self.fd = open(self.fn, "r+b")
 		self.fd.seek(0, os.SEEK_END)
+		
+		#get total size of container
 		size = self.fd.tell()
+		
+		#seek to the correct location in the container to read the header
 		if backup:
 			self.fd.seek((size - 131072) if not hidden else (size - 65536))
 		else:
 			self.fd.seek(0 if not hidden else 65536)
+		
+		#read the encrypted header
 		self.tchdr_ciphered = self.fd.read(512)
+		
+		#get the unencrypted salt for the header key
 		self.salt = self.tchdr_ciphered[0:64]
 		self.hdrkeys = None
 
 		# Header key derivation
-		pwhash = PBKDF2(self.pw, self.salt, 64, count=self.hash_func_rounds, prf=lambda p,s: HMAC.new(p,s,self.hash_func).digest())
+		pwhash = PBKDF2(self.pw, self.salt, 64*len(self.encryption_mode), count=self.hash_func_rounds, prf=lambda p,s: HMAC.new(p,s,self.hash_func).digest())
         
-		#Header keys
-		self.hdrkeys = { 'key':pwhash[0:32], 'xtskey':pwhash[32:64] }
+		#get header crypto keys from pwhash
+		keys = []
+		if len(self.encryption_mode) == 1:
+			keys.append(pwhash[0:64])
+		elif len(self.encryption_mode) == 2:
+			keys.append(pwhash[32:64]+pwhash[96:128]) 
+			keys.append(pwhash[0:32]+pwhash[64:96])
+		elif len(self.encryption_mode) == 3:
+			keys.append(pwhash[64:96]+pwhash[160:192])
+			keys.append(pwhash[32:64]+pwhash[128:160]) 
+			keys.append(pwhash[0:32]+pwhash[96:128])
 		
-		#crypto objects
-		self.hdrenc = self._get_encryption_object(self.hdrkeys['key'])
-		self.hdrencxts = self._get_encryption_object(self.hdrkeys['xtskey'])
-		if not self.hdrenc or not self.hdrencxts: return False
-		
+		#create header crypto objects
+		i = 0
+		for mode in self.encryption_mode:
+			self.hdrenc[mode].set_keys(keys[i])
+			i = i + 1
+			
 		#decrypt header
-		self.tchdr_plain = self._decrypt_sector(self.hdrenc, self.hdrencxts, 0, self.tchdr_ciphered, 64)
+		self.tchdr_plain = self._decrypt_sector(0,self.tchdr_ciphered,64,True)
 
 		#check correct decryption
 		magic_number = ("TRUE" if not self.veracrypt else "VERA")
 		if self.tchdr_plain[0:4] != magic_number:
+			#magic number is incorrect
 			self.valid = False
-
+		else:
+			#magic number is correct
+			self.valid = True
+		
+		#check crc values
+		self.checkCRC32()
+		
 		if decode:
 			#Decode header into struct/namedtuple
 			TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
 			self.hdr_decoded = TCHDR._make(struct.unpack(">4sH", self.tchdr_plain[0:6]) + struct.unpack("<H", self.tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", self.tchdr_plain[8:448]))
 			
-			# Load primary and secondary key
-			self.keys = {'key': self.hdr_decoded.Keys[0:32], 'xtskey': self.hdr_decoded.Keys[32:64]}
-			self.mainenc = self._get_encryption_object(self.keys['key'])
-			self.mainencxts = self._get_encryption_object(self.keys['xtskey'])
-			if not self.mainenc or not self.mainencxts: return False
-			self.valid = True
-		self.checkCRC32()
+			#load primary and secondary key for each crypto
+			keys = []
+			if len(self.encryption_mode) == 1:
+				keys.append(self.hdr_decoded.Keys[0:64])
+			elif len(self.encryption_mode) == 2:
+				keys.append(self.hdr_decoded.Keys[32:64]+self.hdr_decoded.Keys[96:128]) 
+				keys.append(self.hdr_decoded.Keys[0:32]+self.hdr_decoded.Keys[64:96])
+			elif len(self.encryption_mode) == 3:
+				keys.append(self.hdr_decoded.Keys[64:96]+self.hdr_decoded.Keys[160:192])
+				keys.append(self.hdr_decoded.Keys[32:64]+self.hdr_decoded.Keys[128:160]) 
+				keys.append(self.hdr_decoded.Keys[0:32]+self.hdr_decoded.Keys[96:128])
+			i = 0
+			for mode in self.encryption_mode:
+				self.dataenc[mode].set_keys(keys[i])
+				i = i + 1
+		
 		if self.valid and self.valid_HeaderCRC and self.valid_KeyCRC: 
 			return True
 		else:
@@ -130,7 +202,7 @@ class PyTruecrypt:
 		if self.valid: 
 			secstart = self.hdr_decoded.DataStart / 512
 		self.fd.seek((secstart + sector)*512)
-		return self._decrypt_sector(self.mainenc, self.mainencxts, secstart + sector, self.fd.read(512))
+		return self._decrypt_sector(secstart + sector, self.fd.read(512))
 		
 	# Gets ciphertext sector from data input
 	def getCipherSector(self, sector, plaintext, secstart=0):
@@ -153,14 +225,6 @@ class PyTruecrypt:
 		cipherSector = self.getCipherSector(sector, plaintext, secstart)
 		self.fd.seek((secstart  + sector) * 512)
 		self.fd.write(cipherSector)
-		
-	# get linux device mapper table to allow easy mounting
-	def getDeviceMapperTable(self, loopdevice):
-		if not self.valid:
-			return False
-		secstart = self.hdr_decoded.DataStart / 512
-		size = self.hdr_decoded.DataSize / 512
-		return "0 %d crypt aes-xts-plain64 %s %d %s %d" % (size, binascii.hexlify(self.keys['key']+self.keys['xtskey']), secstart, loopdevice, secstart)
 	
 	# checks if the CRC32 of bytes matches the target CRC32
 	def calculateCRC32(self,bytes,target):
@@ -171,43 +235,33 @@ class PyTruecrypt:
 	
 	# checks if the store CRC32 in the header matches the calculated CRC32 header
 	def checkCRC32(self):
-		if not self.valid:
-			return False
 		self.valid_HeaderCRC = self.calculateCRC32(self.tchdr_plain[:188],self.tchdr_plain[188:192])
 		self.valid_KeyCRC = self.calculateCRC32(self.tchdr_plain[192:],self.tchdr_plain[8:12])
-
-	# internal function
-	def _get_encryption_object(self,key):
-		if self.encryption == "aes":
-			return AES.new(key, AES.MODE_ECB)
-		elif self.encryption == "serpent":
-			return Serpent.new(key, Serpent.MODE_ECB)
-		elif self.encryption == "twofish":
-			return TwoFish.new(key, TwoFish.MODE_ECB)
-		else:
-			return False
 	
-	# Decrypts a sector, given pycrypto aes object for master key plus xts key
+	# Decrypts a sector, given one or more pycrypto objects for master key plus xts key
 	# Offset for partial sector decrypts (e.g. hdr)
-	# internal function
-	def _decrypt_sector(self, enc, encxts, sector, ciphertext, offset=0):
+	# internal function, uses _single_decrypt_sector to decrypt data for each pycrypto object
+	def _decrypt_sector(self, sector, ciphertext, offset=0, header=False):
+		for mode in self.encryption_mode:
+			if header:
+				ciphertext = self._single_decrypt_sector(self.hdrenc[mode].enc, self.hdrenc[mode].encxts,sector,ciphertext,offset)
+			else:
+				ciphertext = self._single_decrypt_sector(self.dataenc[mode].enc, self.dataenc[mode].encxts,sector,ciphertext,offset)
+		return ciphertext[offset:]
+	
+	def _encrypt_sector(self, sector, plaintext, offset=0, header=False):
+		for mode in self.encryption_mode:
+			if header:
+				plaintext = self._single_encrypt_sector(self.hdrenc[mode].enc, self.hdrenc[mode].encxts,sector,plaintext,offset)
+			else:
+				plaintext = self._single_encrypt_sector(self.dataenc[mode].enc, self.dataenc[mode].encxts,sector,plaintext,offset)
+		return plaintext[offset:]
+	
+	def _single_encrypt_sector(self, enc, encxts, sector, plaintext, offset=0):
 		# Encrypt IV to produce XTS tweak
 		ek2n = encxts.encrypt(inttoLE(sector))
 
-		tc_plain = ''
-		for i in range(offset, 512, 16):
-			# Decrypt and apply tweak according to XTS scheme
-			# pt = Dec(ct ^ ek2n) ^ ek2n
-			ptext = xor( enc.decrypt( xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
-			tc_plain += ptext
-			ek2n = self._exponentiate_tweak(ek2n)
-		return tc_plain
-		
-	def _encrypt_sector(self, enc, encxts, sector, plaintext, offset=0):
-		# Encrypt IV to produce XTS tweak
-		ek2n = encxts.encrypt(inttoLE(sector))
-
-		tc_cipher = ''
+		tc_cipher = '\x00' * offset #pad for offset
 		print hexdump(plaintext)
 		for i in range(offset, 512, 16):
 			# Decrypt and apply tweak according to XTS scheme
@@ -216,6 +270,21 @@ class PyTruecrypt:
 			tc_cipher += ctext
 			ek2n = self._exponentiate_tweak(ek2n)
 		return tc_cipher
+	
+	# Decrypt ciphertext with individual crypto object
+	# Internal function
+	def _single_decrypt_sector(self, enc, encxts, sector, ciphertext, offset=0):
+		# Encrypt IV to produce XTS tweak
+		ek2n = encxts.encrypt(inttoLE(sector))
+
+		tc_plain = '\x00' * offset #pad for offset
+		for i in range(offset, 512, 16):
+			# Decrypt and apply tweak according to XTS scheme
+			# pt = Dec(ct ^ ek2n) ^ ek2n
+			ptext = xor( enc.decrypt( xor(ek2n, ciphertext[i:i+16]) ) , ek2n)
+			tc_plain += ptext
+			ek2n = self._exponentiate_tweak(ek2n)
+		return tc_plain
 	
 	# exponentiate tweak for next block (multiply by two in finite field)
 	def _exponentiate_tweak(self, ek2n):
