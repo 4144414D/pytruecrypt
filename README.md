@@ -19,7 +19,7 @@ TODO:
 - add more options  
 
 PREREQUISITES:
-You must have pycrypto installed (python-pycryptopp on most distros)
+You must have pycryptoplus installed.
   
 DOCUMENTATION:
 
