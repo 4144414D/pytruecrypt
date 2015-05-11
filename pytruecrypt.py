@@ -58,8 +58,7 @@ class PyTruecrypt:
 		self.fn = filename
 		self.veracrypt = veracrypt
 		self.valid = False
-		self.encryption_mode = encryption #aes, serpent, twofish, aes-twofish, aes-twofish-serpent, serpent-aes, serpent-aes-twofish, twofish-serpent
-		
+		self.encryption_mode = encryption
 		
 		#check viable encryption_mode chosen
 		if self.encryption_mode not in [["aes"],["aes","twofish"],["aes","twofish","serpent"],["serpent"],["serpent","aes"],["serpent","twofish","aes"],["twofish"],["twofish","serpent"]]:
@@ -157,32 +156,37 @@ class PyTruecrypt:
 		#check crc values
 		self.checkCRC32()
 		
-		if decode:
-			#Decode header into struct/namedtuple
-			TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
-			self.hdr_decoded = TCHDR._make(struct.unpack(">4sH", self.tchdr_plain[0:6]) + struct.unpack("<H", self.tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", self.tchdr_plain[8:448]))
-			
-			#load primary and secondary key for each crypto
-			keys = []
-			if len(self.encryption_mode) == 1:
-				keys.append(self.hdr_decoded.Keys[0:64])
-			elif len(self.encryption_mode) == 2:
-				keys.append(self.hdr_decoded.Keys[32:64]+self.hdr_decoded.Keys[96:128]) 
-				keys.append(self.hdr_decoded.Keys[0:32]+self.hdr_decoded.Keys[64:96])
-			elif len(self.encryption_mode) == 3:
-				keys.append(self.hdr_decoded.Keys[64:96]+self.hdr_decoded.Keys[160:192])
-				keys.append(self.hdr_decoded.Keys[32:64]+self.hdr_decoded.Keys[128:160]) 
-				keys.append(self.hdr_decoded.Keys[0:32]+self.hdr_decoded.Keys[96:128])
-			i = 0
-			for mode in self.encryption_mode:
-				self.dataenc[mode].set_keys(keys[i])
-				i = i + 1
+		if decode: 
+			print 'yo'
+			decodeHeader()
 		
 		if self.valid and self.valid_HeaderCRC and self.valid_KeyCRC: 
 			return True
 		else:
 			return False
-
+			
+	def decodeHeader(self):
+		#Decode header into struct/namedtuple
+		print "PRINT HI"
+		TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
+		self.hdr_decoded = TCHDR._make(struct.unpack(">4sH", self.tchdr_plain[0:6]) + struct.unpack("<H", self.tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", self.tchdr_plain[8:448]))
+		
+		#load primary and secondary key for each crypto
+		keys = []
+		if len(self.encryption_mode) == 1:
+			keys.append(self.hdr_decoded.Keys[0:64])
+		elif len(self.encryption_mode) == 2:
+			keys.append(self.hdr_decoded.Keys[32:64]+self.hdr_decoded.Keys[96:128]) 
+			keys.append(self.hdr_decoded.Keys[0:32]+self.hdr_decoded.Keys[64:96])
+		elif len(self.encryption_mode) == 3:
+			keys.append(self.hdr_decoded.Keys[64:96]+self.hdr_decoded.Keys[160:192])
+			keys.append(self.hdr_decoded.Keys[32:64]+self.hdr_decoded.Keys[128:160]) 
+			keys.append(self.hdr_decoded.Keys[0:32]+self.hdr_decoded.Keys[96:128])
+		i = 0
+		for mode in self.encryption_mode:
+			self.dataenc[mode].set_keys(keys[i])
+			i = i + 1
+			
 	#decoded header is python dict
 	def getHeader(self):
 		if not self.valid:
