@@ -92,9 +92,11 @@ class PyTruecrypt:
 
 	def open_with_key(self, aes_key=None, twofish_key=None, serpent_key=None):
 		self.fd = open(self.fn, "r+b")
-		if aes_key: self.enc['aes'].set_keys(aes_key)
-		if twofish_key: self.enc['twofish'].set_keys(twofish_key)
-		if serpent_key: self.enc['serpent'].set_keys(serpent_key)
+		self.fd.seek(0, os.SEEK_END)
+		self.size = self.fd.tell()
+		if aes_key: self.dataenc['aes'].set_keys(aes_key)
+		if twofish_key: self.dataenc['twofish'].set_keys(twofish_key)
+		if serpent_key: self.dataenc['serpent'].set_keys(serpent_key)
 		self.open_with_key = True
 	
 	def open(self, password, hidden=False, decode=True, backup=False):
@@ -105,11 +107,11 @@ class PyTruecrypt:
 		self.fd.seek(0, os.SEEK_END)
 		
 		#get total size of container
-		size = self.fd.tell()
+		self.size = self.fd.tell()
 		
 		#seek to the correct location in the container to read the header
 		if backup:
-			self.fd.seek((size - 131072) if not hidden else (size - 65536))
+			self.fd.seek((self.fd.size - 131072) if not hidden else (self.size - 65536))
 		else:
 			self.fd.seek(0 if not hidden else 65536)
 		
@@ -157,17 +159,15 @@ class PyTruecrypt:
 		self.checkCRC32()
 		
 		if decode: 
-			print 'yo'
-			decodeHeader()
+			self.decodeHeader()
 		
 		if self.valid and self.valid_HeaderCRC and self.valid_KeyCRC: 
 			return True
 		else:
 			return False
-			
+	
 	def decodeHeader(self):
 		#Decode header into struct/namedtuple
-		print "PRINT HI"
 		TCHDR = namedtuple('TCHDR', "Magic HdrVersion MinProgVer CRC Reserved HiddenVolSize VolSize DataStart DataSize Flags SectorSize Reserved2 CRC3 Keys")
 		self.hdr_decoded = TCHDR._make(struct.unpack(">4sH", self.tchdr_plain[0:6]) + struct.unpack("<H", self.tchdr_plain[6:8]) + struct.unpack(">I16sQQQQII120sI256s", self.tchdr_plain[8:448]))
 		
@@ -186,7 +186,7 @@ class PyTruecrypt:
 		for mode in self.encryption_mode:
 			self.dataenc[mode].set_keys(keys[i])
 			i = i + 1
-			
+	
 	#decoded header is python dict
 	def getHeader(self):
 		if not self.valid:
@@ -203,7 +203,7 @@ class PyTruecrypt:
 	def getPlainSector(self, sector, secstart=0):
 		if not (self.valid or (self.open_with_key and secstart > 0)):
 			return False
-		if self.valid: 
+		if self.valid and secstart == 0: 
 			secstart = self.hdr_decoded.DataStart / 512
 		self.fd.seek((secstart + sector)*512)
 		return self._decrypt_sector(secstart + sector, self.fd.read(512))
@@ -214,9 +214,9 @@ class PyTruecrypt:
 			return False
 		if len(plaintext) != 512:
 			return False
-		if self.valid: 
+		if self.valid and secstart == 0:
 			secstart = self.hdr_decoded.DataStart / 512
-		return self._encrypt_sector(self.mainenc, self.mainencxts, secstart + sector, plaintext)
+		return self._encrypt_sector(secstart + sector, plaintext)
 	
 	# Writes ciphertext sector from data input
 	def putCipherSector(self, sector, plaintext, secstart=0):
