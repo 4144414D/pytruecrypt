@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Pytruecrypt by 4144414D</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Pytruecrypt</h1>
+        <h2>Truecrypt volume parsing library</h2>
+        <a href="https://github.com/4144414D/pytruecrypt" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="pytruecrypt" class="anchor" href="#pytruecrypt" aria-hidden="true"><span class="octicon octicon-link"></span></a>pytruecrypt</h1>
+
+<p>Truecrypt volume parsing library by Gareth Owen, University of Portsmouth  </p>
+
+<p>Library status: </p>
+
+<ul>
+<li>Decrypts header (can dump raw decrypted header)</li>
+<li>Decodes header fields</li>
+<li>Can dump any decrypted sector</li>
+<li>Hidden volume support</li>
+<li>Easy to use - see example and source code for API</li>
+</ul>
+
+<p>Examples:</p>
+
+<ul>
+<li>mount.py: Mount volume on linux using device mapper</li>
+<li>pwcrack.py: Password cracker</li>
+<li>dump.py: Header and sector decrypted hex dump</li>
+</ul>
+
+<p>TODO: </p>
+
+<ul>
+<li>add more options<br>
+</li>
+</ul>
+
+<p>PREREQUISITES:
+You must have pycryptoplus installed.</p>
+
+<p>DOCUMENTATION:</p>
+
+<p>Very little as the code is compact. See the examples, and pytruecrypt.py - the comments show how to use it.</p>
+
+<p>EXAMPLE USAGE:  </p>
+
+<p>Use -h for a hidden volume</p>
+
+<pre><code>mount.py [-h] volumename dmname
+
+pwcrack.py [-h] volumename wordlist
+
+dump.py [-h] volumename
+</code></pre>
+
+<p>Example capabilities:  </p>
+
+<pre><code>HEADER ------------  
+Magic : TRUE  
+HdrVersion : 5  
+MinProgVer : 7  
+CRC : 478393955  
+Reserved :   
+HiddenVolSize : 0  
+VolSize : 4980736  
+DataStart : 131072  
+DataSize : 4980736  
+Flags : 0  
+SectorSize : 512  
+Reserved2 :   
+CRC3 : 1731532461  
+Keys : 9957787da1014346895b4fc2ceafe00727819694f049b4fb9c74fae99e087312342f456f9db596a79bf8ef1dd46d542c0084ad9a1ebed3c1903ec96e59b2fc1d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000  
+
+FIRST SECTOR-------  
+0000  eb 3c 90 4d 53 44 4f 53 35 2e 30 00 02 02 02 00   .&lt;.MSDOS5.0.....  
+0010  02 00 02 00 26 f8 13 00 01 00 01 00 00 00 00 00   ....&amp;...........  
+0020  00 00 00 00 00 00 29 18 d5 1e 7d 4e 4f 20 4e 41   ......)...}NO NA  
+0030  4d 45 20 20 20 20 46 41 54 31 36 20 20 20 00 00   ME    FAT16   ..  
+0040  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0060  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0070  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0080  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0090  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+00a0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+00b0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+00c0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+00d0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+00e0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+00f0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0100  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0110  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0120  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0130  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0140  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0150  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0160  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0170  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0180  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+0190  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+01a0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+01b0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+01c0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+01d0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+01e0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
+01f0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 55 aa   ..............U.  
+
+0 9728 crypt aes-xts-plain64 9957787da1014346895b4fc2ceafe00727819694f049b4fb9c74fae99e087312342f456f9db596a79bf8ef1dd46d542c0084ad9a1ebed3c1903ec96e59b2fc1d 256 /dev/loop0 256  
+Tcryptdevice on /dev/mapper/tcrypt - you may now mount it  
+</code></pre>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/4144414D/pytruecrypt/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/4144414D/pytruecrypt/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/4144414D/pytruecrypt"></a> is maintained by <a href="https://github.com/4144414D">4144414D</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
