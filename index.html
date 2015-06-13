@@ -1,155 +1,304 @@
 <!DOCTYPE html>
 <html>
+
   <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <meta name="description" content="Pytruecrypt : Truecrypt volume parsing library">
 
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <title>Pytruecrypt by 4144414D</title>
+    <title>Pytruecrypt</title>
   </head>
 
   <body>
-    <header>
-      <div class="inner">
-        <h1>Pytruecrypt</h1>
-        <h2>Truecrypt volume parsing library</h2>
-        <a href="https://github.com/4144414D/pytruecrypt" class="button"><small>View project on</small> GitHub</a>
-      </div>
-    </header>
 
-    <div id="content-wrapper">
-      <div class="inner clearfix">
-        <section id="main-content">
-          <h1>
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/4144414D/pytruecrypt">View on GitHub</a>
+
+          <h1 id="project_title">Pytruecrypt</h1>
+          <h2 id="project_tagline">Truecrypt volume parsing library</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/4144414D/pytruecrypt/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/4144414D/pytruecrypt/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
 <a id="pytruecrypt" class="anchor" href="#pytruecrypt" aria-hidden="true"><span class="octicon octicon-link"></span></a>pytruecrypt</h1>
 
-<p>Truecrypt volume parsing library by Gareth Owen, University of Portsmouth  </p>
+<p>Truecrypt volume parsing library by originally created by <a href="https://github.com/drgowen/">Gareth Owen</a>, University of Portsmouth, with additional features added by <a href="https://github.com/4144414d/">Adam Swann</a>.</p>
 
-<p>Library status: </p>
+<p>Library status:</p>
 
 <ul>
 <li>Decrypts header (can dump raw decrypted header)</li>
 <li>Decodes header fields</li>
 <li>Can dump any decrypted sector</li>
 <li>Hidden volume support</li>
+<li>Veracrypt support</li>
+<li>Can decrypt using only recovered keys (no password required)</li>
+<li>Supports all encryption modes and hash functions offered by Truecrypt</li>
+<li>Can decrypt damaged containers if salt and header keys are recoverable </li>
 <li>Easy to use - see example and source code for API</li>
 </ul>
 
 <p>Examples:</p>
 
 <ul>
-<li>mount.py: Mount volume on linux using device mapper</li>
-<li>pwcrack.py: Password cracker</li>
-<li>dump.py: Header and sector decrypted hex dump</li>
+<li>dump.py: Header and first sector decrypted hex dump</li>
+<li>image.py: Create decrypted dd image of container</li>
+<li>pw-check.py: Checks password against all available Truecrypt options</li>
+<li>pwcracker.py: Password cracker</li>
+<li>quick-container.py: Produces a working Truecrypt container in seconds</li>
+<li>reserved.py: Hides data within the reserved space of a container</li>
 </ul>
 
-<p>TODO: </p>
+<h2>
+<a id="example-usage" class="anchor" href="#example-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example Usage</h2>
 
-<ul>
-<li>add more options<br>
-</li>
-</ul>
+<p>Below are examples on how to use the example scripts.</p>
 
-<p>PREREQUISITES:
-You must have pycryptoplus installed.</p>
+<h4>
+<a id="dumppy" class="anchor" href="#dumppy" aria-hidden="true"><span class="octicon octicon-link"></span></a>dump.py</h4>
 
-<p>DOCUMENTATION:</p>
+<p>dump.py will perform a hex dump of the decrypted header and first sector of a container. It also works with hidden volumes if given the -h option. </p>
 
-<p>Very little as the code is compact. See the examples, and pytruecrypt.py - the comments show how to use it.</p>
+<pre><code>&gt; dump &lt;container&gt;
+&gt; dump example.tc
+&gt; Enter password: password
 
-<p>EXAMPLE USAGE:  </p>
+HEADER RAW ----------
+0000  54 52 55 45 00 05 07 00 5c 96 e9 4b 00 00 00 00   TRUE.......K....
+0010  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0020  00 00 00 00 00 00 00 00 00 0c 00 00 00 00 00 00   ................
+0030  00 02 00 00 00 00 00 00 00 0c 00 00 00 00 00 00   ................
+0040  00 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0060  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0070  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0080  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0090  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+00a0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+00b0  00 00 00 00 00 00 00 00 00 00 00 00 33 73 eb c2   ............3s..
+00c0  12 12 2c ee 8a ff 05 d5 2f ef d3 6e 49 a9 4a bb   ..,...../..nI.J.
+00d0  13 0e 08 f1 3a 93 73 2a 71 86 97 7d 40 70 af 62   ....:.s*q..}@p.b
+00e0  05 8e 6f 27 36 0c 64 06 6e 41 23 8f fe f8 33 65   ..o'6.d.nA#...3e
+00f0  6c 34 f9 54 f1 71 96 f9 36 9e f1 ab 62 75 c6 6b   l4.T.q..6...bu.k
+0100  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0110  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0120  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0130  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0140  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0150  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0160  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0170  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0180  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0190  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+01a0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+01b0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
 
-<p>Use -h for a hidden volume</p>
+HEADER ------------
+Magic : TRUE
+HdrVersion : 5
+MinProgVer : 7
+CRC : 1553393995
+Reserved :                 
+HiddenVolSize : 0
+VolSize : 786432
+DataStart : 131072
+DataSize : 786432
+Flags : 0
+SectorSize : 512
+Reserved2 :                                                                                                                         
+CRC3 : 863235010
+Keys : 12122cee8aff05d52fefd36e49a94abb130e08f13a93732a7186977d4070af62058e6f27360c64066e41238ffef833656c34f954f17196f9369ef1ab6275c66b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
-<pre><code>mount.py [-h] volumename dmname
-
-pwcrack.py [-h] volumename wordlist
-
-dump.py [-h] volumename
+FIRST SECTOR-------
+0000  eb 3c 90 4d 53 44 4f 53 35 2e 30 00 02 01 02 00   .&lt;.MSDOS5.0.....
+0010  02 00 02 00 06 f8 05 00 01 00 01 00 00 00 00 00   ................
+0020  00 00 00 00 00 00 29 dc 16 81 6a 4e 4f 20 4e 41   ......)...jNO NA
+0030  4d 45 20 20 20 20 46 41 54 31 32 20 20 20 00 00   ME    FAT12   ..
+0040  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0060  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0070  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0080  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0090  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+00a0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+00b0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+00c0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+00d0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+00e0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+00f0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0100  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0110  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0120  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0130  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0140  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0150  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0160  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0170  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0180  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+0190  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+01a0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+01b0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+01c0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+01d0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+01e0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+01f0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 55 aa   ..............U.
 </code></pre>
 
-<p>Example capabilities:  </p>
+<h4>
+<a id="imagepy" class="anchor" href="#imagepy" aria-hidden="true"><span class="octicon octicon-link"></span></a>image.py</h4>
 
-<pre><code>HEADER ------------  
-Magic : TRUE  
-HdrVersion : 5  
-MinProgVer : 7  
-CRC : 478393955  
-Reserved :   
-HiddenVolSize : 0  
-VolSize : 4980736  
-DataStart : 131072  
-DataSize : 4980736  
-Flags : 0  
-SectorSize : 512  
-Reserved2 :   
-CRC3 : 1731532461  
-Keys : 9957787da1014346895b4fc2ceafe00727819694f049b4fb9c74fae99e087312342f456f9db596a79bf8ef1dd46d542c0084ad9a1ebed3c1903ec96e59b2fc1d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000  
+<p>image is used to image a truecrypt container for further analysis. The container can be open with a password or with keys extracted from memory.</p>
 
-FIRST SECTOR-------  
-0000  eb 3c 90 4d 53 44 4f 53 35 2e 30 00 02 02 02 00   .&lt;.MSDOS5.0.....  
-0010  02 00 02 00 26 f8 13 00 01 00 01 00 00 00 00 00   ....&amp;...........  
-0020  00 00 00 00 00 00 29 18 d5 1e 7d 4e 4f 20 4e 41   ......)...}NO NA  
-0030  4d 45 20 20 20 20 46 41 54 31 36 20 20 20 00 00   ME    FAT16   ..  
-0040  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0060  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0070  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0080  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0090  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-00a0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-00b0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-00c0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-00d0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-00e0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-00f0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0100  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0110  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0120  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0130  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0140  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0150  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0160  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0170  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0180  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-0190  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-01a0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-01b0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-01c0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-01d0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-01e0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................  
-01f0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 55 aa   ..............U.  
+<p>Encryption modes can be assigned long or short hand where:</p>
 
-0 9728 crypt aes-xts-plain64 9957787da1014346895b4fc2ceafe00727819694f049b4fb9c74fae99e087312342f456f9db596a79bf8ef1dd46d542c0084ad9a1ebed3c1903ec96e59b2fc1d 256 /dev/loop0 256  
-Tcryptdevice on /dev/mapper/tcrypt - you may now mount it  
+<pre><code>aes      = a
+twofish  = t
+serpent  = s
 </code></pre>
-        </section>
 
-        <aside id="sidebar">
-          <a href="https://github.com/4144414D/pytruecrypt/zipball/master" class="button">
-            <small>Download</small>
-            .zip file
-          </a>
-          <a href="https://github.com/4144414D/pytruecrypt/tarball/master" class="button">
-            <small>Download</small>
-            .tar.gz file
-          </a>
+<p>For example 'aes-twofish' can be shortened to 'at' and aes-twofish-serpent 
+to ats. </p>
 
-          <p class="repo-owner"><a href="https://github.com/4144414D/pytruecrypt"></a> is maintained by <a href="https://github.com/4144414D">4144414D</a>.</p>
+<p>Similarly hash functions can be assigned long or short hand where:</p>
 
-          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
-        </aside>
-      </div>
+<pre><code>ripemd    = r
+sha-512   = s
+whirlpool = w
+</code></pre>
+
+<h5>
+<a id="example-usage-1" class="anchor" href="#example-usage-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example usage:</h5>
+
+<pre><code>&gt; image pwd &lt;tc&gt; &lt;image&gt; &lt;mode&gt; &lt;password&gt; [&lt;hash&gt;] [-vbh] [(-f -oBYTES -dBYTES)]
+&gt; image key &lt;tc&gt; &lt;image&gt; &lt;mode&gt; [-aKEY -tKEY -sKEY] [(-oBYTES -dBYTES)]
+</code></pre>
+
+<h6>
+<a id="scenario-1" class="anchor" href="#scenario-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scenario 1:</h6>
+
+<p>You wish to image a TrueCrypt file "input1.tc" to an image named "output1.dd", 
+it uses aes and ripemd. The password is "Scenario1". As ripemd is the default
+for TrueCrypt it does not need to be specified.</p>
+
+<pre><code>&gt; image pwd input1.tc output1.dd aes Scenario1 
+</code></pre>
+
+<h6>
+<a id="scenario-2" class="anchor" href="#scenario-2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scenario 2:</h6>
+
+<p>You wish to image a TrueCrypt file "input2.tc" to an image named "output2.dd",
+it uses aes-serpent and sha512. The password is "Scenario2". You wish to save 
+time and use the short hand commands.</p>
+
+<pre><code>&gt; image pwd input2.tc output2.dd as Scenario2 s
+</code></pre>
+
+<h6>
+<a id="scenario-3" class="anchor" href="#scenario-3" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scenario 3:</h6>
+
+<p>You wish to image a TrueCrypt file "input3.tc" to an image named "output3.dd",
+it uses aes-serpent. You know it contains a hidden volume and the password is 
+"Scenario3".</p>
+
+<pre><code>&gt; image pwd input3.tc output3.dd aes-serpent Scenario3 --hidden
+</code></pre>
+
+<h6>
+<a id="scenario-4" class="anchor" href="#scenario-4" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scenario 4:</h6>
+
+<p>You wish to image a TrueCrypt file "input4.tc" to an image named "output4.dd",
+it uses aes. You do not know the password but have extracted AES keys from 
+memory. </p>
+
+<pre><code>&gt; image key input4.tc output4.dd aes --aes bac01155a46547f00c3ddf9a4a765159fbe
+1f68d94bf11a3bd6910eedf26d867a63263c949812cd68b7dad91a8dfdacb96942b93cc1b21ffa
+feeb4791a0befa4
+</code></pre>
+
+<h4>
+<a id="pw-checkpy" class="anchor" href="#pw-checkpy" aria-hidden="true"><span class="octicon octicon-link"></span></a>pw-check.py</h4>
+
+<p>pw-check.py is used to check that a small list of passwords work against a container. It checks all options available in Truecrypt and allows you to confirm that normal and backup headers match. The -d option will print the decoded header to screen if successful, the -v option will also read Veracrypt files.  </p>
+
+<pre><code>&gt; pw-check &lt;container&gt; &lt;password&gt;
+&gt; pw-check example.tc password
+password appears to be valid for a TrueCrypt standard volume using the normal header using aes and ripemd
+password appears to be valid for a TrueCrypt standard volume using the backup header using aes and ripemd
+</code></pre>
+
+<h4>
+<a id="pwcrackerpy" class="anchor" href="#pwcrackerpy" aria-hidden="true"><span class="octicon octicon-link"></span></a>pwcracker.py</h4>
+
+<p>pwcracker.py is an example password cracker for Truecrypt. Simply provide a word list and it will attempt to crack the container.</p>
+
+<pre><code>&gt; pwcracker &lt;container&gt; &lt;wordlist&gt;
+&gt; pwcracker example.tc wordlist.txt
+&gt; PW Found: password
+</code></pre>
+
+<h4>
+<a id="quick-containerpy" class="anchor" href="#quick-containerpy" aria-hidden="true"><span class="octicon octicon-link"></span></a>quick-container.py</h4>
+
+<p>quick-container.py produces a Truecrypt container quickly by skipping the first stage encryption setting. This is therefore similar to 'quick format' full disk encryption whereby the free space is not first encrypted. This means a hidden volume is very obvious and it's possible to track the ammount of encrypted data stored within a container. </p>
+
+<p>The containers are not formatted and once mounted will require a file system to be created. Containers are always created using AES and ripemd. </p>
+
+<pre><code>&gt; quick-container &lt;container&gt; &lt;password&gt; &lt;mb-size&gt;
+&gt; quick-container example password 1024
+</code></pre>
+
+<h4>
+<a id="reservedpy" class="anchor" href="#reservedpy" aria-hidden="true"><span class="octicon octicon-link"></span></a>reserved.py</h4>
+
+<p>reserved.py uses the free space in the Truecrypt header to hide additional data. This data is encrypted with the same password as the container itself. </p>
+
+<p>To hide a file:</p>
+
+<pre><code>&gt; reserved hide &lt;container&gt; &lt;password&gt; &lt;file&gt;
+&gt; reserved hide example.tc password secret.txt
+</code></pre>
+
+<p>To read a hidden file:</p>
+
+<pre><code>&gt; reserved check &lt;container&gt; &lt;password&gt;
+&gt; reserved check example.tc password
+&gt; My secret file...
+</code></pre>
+
+<h2>
+<a id="prerequisites" class="anchor" href="#prerequisites" aria-hidden="true"><span class="octicon octicon-link"></span></a>Prerequisites:</h2>
+
+<p>You must have pycryptoplus installed - <a href="https://github.com/doegox/python-cryptoplus">https://github.com/doegox/python-cryptoplus</a>
+For many examples you must have docopt installed - <a href="http://docopt.org/">http://docopt.org/</a></p>
+
+<h2>
+<a id="truecrypt-documentation" class="anchor" href="#truecrypt-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Truecrypt Documentation:</h2>
+
+<p>Very little as the code is generally compact. See the examples, and pytruecrypt.py - the comments show how to use it.</p>
+      </section>
     </div>
 
-  
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Pytruecrypt maintained by <a href="https://github.com/4144414D">4144414D</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
   </body>
 </html>
