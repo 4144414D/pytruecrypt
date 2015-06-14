@@ -363,8 +363,8 @@ Further space in the header which isn’t used.
 
 A CRC32 value for the bytes 64-251 of the header.
 
-**14) Master Keys - 64 Bytes each**
+**14) Master Keys - 32 Bytes each**
 
-The remaining space is devoted to the master keys. If multiple encryption algorithms are used then multiple keys will be present.
+The remaining space is devoted to the master keys. If multiple encryption algorithms are used then multiple keys will be present. Each 'master key' is comprised of 2 separate 128-bit keys for XTS.
 	
 ![Truecrypt Header](https://raw.githubusercontent.com/4144414D/pyTruecrypt/gh-pages/images/header-layout.png)
