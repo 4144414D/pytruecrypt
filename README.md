@@ -113,7 +113,7 @@ dump.py will perform a hex dump of the decrypted header and first sector of a co
     01f0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 55 aa   ..............U.
 
 ####image.py
-image is used to image a truecrypt container for further analysis. The container can be open with a password or with keys extracted from memory.
+image is used to image a Truecrypt container for further analysis. The container can be open with a password or with keys extracted from memory.
 
 Encryption modes can be assigned long or short hand where:
 
@@ -136,28 +136,28 @@ Similarly hash functions can be assigned long or short hand where:
     > image key <tc> <image> <mode> [-aKEY -tKEY -sKEY] [(-oBYTES -dBYTES)]
 
 ######Scenario 1:
-You wish to image a TrueCrypt file "input1.tc" to an image named "output1.dd", 
+You wish to image a Truecrypt file "input1.tc" to an image named "output1.dd", 
 it uses aes and ripemd. The password is "Scenario1". As ripemd is the default
-for TrueCrypt it does not need to be specified.
+for Truecrypt it does not need to be specified.
 
     > image pwd input1.tc output1.dd aes Scenario1 
 
 ######Scenario 2:
-You wish to image a TrueCrypt file "input2.tc" to an image named "output2.dd",
+You wish to image a Truecrypt file "input2.tc" to an image named "output2.dd",
 it uses aes-serpent and sha512. The password is "Scenario2". You wish to save 
 time and use the short hand commands.
 
     > image pwd input2.tc output2.dd as Scenario2 s
 
 ######Scenario 3:
-You wish to image a TrueCrypt file "input3.tc" to an image named "output3.dd",
+You wish to image a Truecrypt file "input3.tc" to an image named "output3.dd",
 it uses aes-serpent. You know it contains a hidden volume and the password is 
 "Scenario3".
 
     > image pwd input3.tc output3.dd aes-serpent Scenario3 --hidden
 
 ######Scenario 4:
-You wish to image a TrueCrypt file "input4.tc" to an image named "output4.dd",
+You wish to image a Truecrypt file "input4.tc" to an image named "output4.dd",
 it uses aes. You do not know the password but have extracted AES keys from 
 memory. 
 
@@ -171,8 +171,8 @@ pw-check.py is used to check that a small list of passwords work against a conta
 
     > pw-check <container> <password>
     > pw-check example.tc password
-	password appears to be valid for a TrueCrypt standard volume using the normal header using aes and ripemd
-	password appears to be valid for a TrueCrypt standard volume using the backup header using aes and ripemd
+	password appears to be valid for a Truecrypt standard volume using the normal header using aes and ripemd
+	password appears to be valid for a Truecrypt standard volume using the backup header using aes and ripemd
 
 ####pwcracker.py
 pwcracker.py is an example password cracker for Truecrypt. Simply provide a word list and it will attempt to crack the container.
@@ -212,69 +212,172 @@ For many examples you must have docopt installed - http://docopt.org/
 Truecrypt Documentation:
 -------------
 
-Very little as the code is generally compact. See the examples, and pytruecrypt.py - the comments show how to use it. I am slowly expanding this section. 
+Very little as the code is generally compact. See the examples, and pyTruecrypt.py - the comments show how to use it. I am slowly expanding this section. 
 
-###TrueCrypt Header v5
+###Truecrypt Basics
+Truecrypt works in two main ways either as full disk encryption or using
+encrypted containers on Windows, Linux, or OSX. On windows it is also
+possible to encrypt the operating system with Truecrypt and boot into
+windows. This is not possible on Linux or OSX but it can still use full
+disk encryption on non OS disks.
 
-TrueCrypt 7.1a uses the header version 5. This header is the same for
+###Algorithms
+Truecrypt allows the following encryption schemes all working in XTS
+mode. Where more than one encryption algorithm is used the data is
+encrypted with each algorithm using different master keys.
+
+- AES (default)
+- Serpent
+- Twofish
+- AES - Twofish
+- AES - Twofish - Serpent
+- Serpent - AES
+- Serpent - Twofish - AES
+
+Three hash algorithms are available, these are:
+
+- RIPEMD (default)
+- SHA-512
+- WHIRLPOOL
+
+
+###Encryption in Truecrypt
+
+Truecrypt uses each of the different encryption algorithms in XTS mode.
+In short this means that same plain text data encrypted with the same
+key but in a different location will produce a different cipher text.
+For example a completely zeroed disk encrypted with XTS mode would look
+completely random, each sector of zeros produces a different sector of
+encrypted data. If ECB mode was used instead you would see a repeating
+pattern where each sector of zeros produced the same sector of encrypted
+data.
+
+Truecrypt stores the master keys within the Truecrypt header and these
+keys are not generated based on the password chosen for the container.
+Instead the master keys are generated randomly when the container is
+created and stored in the header, the header is then encrypted using the
+password provided for by the user. Only by knowing the password to the
+header can you successfully decrypt the header and get to the master
+keys to decrypt the data.
+
+This allows the user to change the password to a container. Rather then
+needing to re-encrypt the whole container only the headers need to be
+re-encrypted with the new password, the master keys remain the same.
+
+This raises the obvious risk, if an attacker can decrypt the header at
+any point in time they can use the master keys to decrypt data. I.E. A
+container is created with a simple password, the attacker cracks this 
+password and stores the master keys. Later the users changes the password
+to the container in an effort to increase security, however the attacker 
+already has the master keys and as such can decrypt the container. 
+
+
+###Volumes
+
+TrueCrypt allows the user to have a normal volume and a hidden volume.
+The normal volume is designed to be well encrypted but if the TrueCrypt
+volume is detected you would not be able to plausibly deny its
+existence, and so rubber hose cryptanalysis could be used to get the
+password from you. The hidden volume on the other hand is designed to
+hide within the normal volume and would look like any other section of
+random data, allowing you to plausibly deny it being there.
+
+The layout of a container is shown in below. The first 256 sectors store 
+the main headers, while the last 256 sectors store the backup headers 
+should the main headers be damaged. Everything in-between is the data 
+section of the container and will store the actual user data.
+
+Almost everything within the container is encrypted so normal analysis
+of the file will simply show ‘random’ data. Only the salts for each of
+the headers are store in a decrypted form, however these are simply 64
+bits of random data so should be impossible to tell them apart.
+
+The normal and backup headers contain the same decrypted data however
+they are encrypted with different salts. This means they will appear to
+be completely different on the binary level.
+
+The space in the headers (254 sectors in total) is seeded with random
+data when the container is first created. This is one of the main
+reasons it’s difficult to detect a hidden volume, with or without one
+this sector will seemingly contain random data.
+
+![Truecrypt Layout](https://raw.githubusercontent.com/4144414D/pytruecrypt/gh-pages/images/container-layout.png)
+
+###Truecrypt Header v5
+
+Truecrypt 7.1a uses the header version 5. This header is the same for
 normal and hidden volumes and system encryption, the difference is
 simply their location and flag bits.
 
 ####Header Elements
 
 **1)  Salt - 64 Bytes**
+
     The salt is used when encrypting the header. This is randomly
     generated data and so will look as if it’s encrypted.
 
 **2)  File Signature - 4 Bytes**
+
     The ASCII string ‘TRUE’. This is used to check if the header has
     been decrypted correctly.
 
 **3)  Header Version - 2 Bytes**
-    The version of TrueCrypt header in use, for 7.1a this will always be
+
+    The version of Truecrypt header in use, for 7.1a this will always be
     [\\x00\\x05](\x00\x05).
 
-**4)  TrueCrypt Version - 2 Bytes**
-    The minimum version of TrueCrypt needed to use the volume. For 7.1a
+**4)  Truecrypt Version - 2 Bytes**
+
+    The minimum version of Truecrypt needed to use the volume. For 7.1a
     this is always be [\\x00\\x07](\x00\x07).
 
-**5)  Key CRC - 4 Bytes**
+**5)  Key CRC - 4 Bytes*
+
     A CRC32 value for the bytes 256-511 of the header. I.E. the master
-    keys. This is also used to confirm if the TrueCrypt header has been
+    keys. This is also used to confirm if the Truecrypt header has been
     decrypted correctly.
 
 **6)  Reserved Space - 16 Bytes**
+
     16 Bytes of [\\x00](\x00) which aren’t used in the header.
 
 **7)  Size of Hidden Volume - 8 Bytes**
+
     The size in bytes of the hidden volume. This is set to zero in a
     non-hidden volume.
 
 **8)  Size of Hidden Volume - 8 Bytes**
+
     The size in bytes of the volume.
 
 **9)  Offset to Data - 8 Bytes**
+
     The is the byte offset from the start of the data. If this header is
     for a normal (non-hidden) container this should be
     [\\x00\\x00\\x00\\x00\\x00\\x02\\x00\\x00](\x00\x00\x00\x00\x00\x02\x00\x00).
     This is 131072 bytes, or sector 256.
 
 **10) Size of Data - 8 Bytes**
+
     The total size in bytes of the data portion of the container.
 
 **11) Flag Bits - 4 Bytes**
+
     Used to determine what type of container is in use. Bit 0 is set for
     system encryption, while bit 1 is set for non-system in place
     encryption. The other bits are not used.
 
 **12) Reserved Space - 120 Bytes**
+
     Further space in the header which isn’t used.
 
 **13) Header CRC - 4 Bytes**
+
     A CRC32 value for the bytes 64-251 of the header.
 
 **14) Master Keys - 64 Bytes each**
+
     The remaining space is devoted to the master keys. If multiple
     encryption algorithms are used then multiple keys will be present.
 	
-![Truecrypt Header](https://raw.githubusercontent.com/4144414D/pytruecrypt/gh-pages/images/header-layout.png)
+![Truecrypt Header](https://raw.githubusercontent.com/4144414D/pyTruecrypt/gh-pages/images/header-layout.png)
