@@ -1,37 +1,25 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en-us">
   <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="Pytruecrypt : Truecrypt volume parsing library">
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>Pytruecrypt</title>
+    <meta charset="UTF-8">
+    <title>Pytruecrypt by 4144414D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
-
   <body>
+    <section class="page-header">
+      <h1 class="project-name">Pytruecrypt</h1>
+      <h2 class="project-tagline">Truecrypt volume parsing library</h2>
+      <a href="https://github.com/4144414D/pytruecrypt" class="btn">View on GitHub</a>
+      <a href="https://github.com/4144414D/pytruecrypt/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/4144414D/pytruecrypt/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/4144414D/pytruecrypt">View on GitHub</a>
-
-          <h1 id="project_title">Pytruecrypt</h1>
-          <h2 id="project_tagline">Truecrypt volume parsing library</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/4144414D/pytruecrypt/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/4144414D/pytruecrypt/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h1>
+    <section class="main-content">
+      <h1>
 <a id="pytruecrypt" class="anchor" href="#pytruecrypt" aria-hidden="true"><span class="octicon octicon-link"></span></a>pytruecrypt</h1>
 
 <p>Truecrypt volume parsing library by originally created by <a href="https://github.com/drgowen/">Gareth Owen</a>, University of Portsmouth, with additional features added by <a href="https://github.com/4144414d/">Adam Swann</a>.</p>
@@ -159,7 +147,7 @@ FIRST SECTOR-------
 <h4>
 <a id="imagepy" class="anchor" href="#imagepy" aria-hidden="true"><span class="octicon octicon-link"></span></a>image.py</h4>
 
-<p>image is used to image a truecrypt container for further analysis. The container can be open with a password or with keys extracted from memory.</p>
+<p>image is used to image a Truecrypt container for further analysis. The container can be open with a password or with keys extracted from memory.</p>
 
 <p>Encryption modes can be assigned long or short hand where:</p>
 
@@ -188,9 +176,9 @@ whirlpool = w
 <h6>
 <a id="scenario-1" class="anchor" href="#scenario-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scenario 1:</h6>
 
-<p>You wish to image a TrueCrypt file "input1.tc" to an image named "output1.dd", 
+<p>You wish to image a Truecrypt file "input1.tc" to an image named "output1.dd", 
 it uses aes and ripemd. The password is "Scenario1". As ripemd is the default
-for TrueCrypt it does not need to be specified.</p>
+for Truecrypt it does not need to be specified.</p>
 
 <pre><code>&gt; image pwd input1.tc output1.dd aes Scenario1 
 </code></pre>
@@ -198,7 +186,7 @@ for TrueCrypt it does not need to be specified.</p>
 <h6>
 <a id="scenario-2" class="anchor" href="#scenario-2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scenario 2:</h6>
 
-<p>You wish to image a TrueCrypt file "input2.tc" to an image named "output2.dd",
+<p>You wish to image a Truecrypt file "input2.tc" to an image named "output2.dd",
 it uses aes-serpent and sha512. The password is "Scenario2". You wish to save 
 time and use the short hand commands.</p>
 
@@ -208,7 +196,7 @@ time and use the short hand commands.</p>
 <h6>
 <a id="scenario-3" class="anchor" href="#scenario-3" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scenario 3:</h6>
 
-<p>You wish to image a TrueCrypt file "input3.tc" to an image named "output3.dd",
+<p>You wish to image a Truecrypt file "input3.tc" to an image named "output3.dd",
 it uses aes-serpent. You know it contains a hidden volume and the password is 
 "Scenario3".</p>
 
@@ -218,7 +206,7 @@ it uses aes-serpent. You know it contains a hidden volume and the password is
 <h6>
 <a id="scenario-4" class="anchor" href="#scenario-4" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scenario 4:</h6>
 
-<p>You wish to image a TrueCrypt file "input4.tc" to an image named "output4.dd",
+<p>You wish to image a Truecrypt file "input4.tc" to an image named "output4.dd",
 it uses aes. You do not know the password but have extracted AES keys from 
 memory. </p>
 
@@ -234,8 +222,8 @@ feeb4791a0befa4
 
 <pre><code>&gt; pw-check &lt;container&gt; &lt;password&gt;
 &gt; pw-check example.tc password
-password appears to be valid for a TrueCrypt standard volume using the normal header using aes and ripemd
-password appears to be valid for a TrueCrypt standard volume using the backup header using aes and ripemd
+password appears to be valid for a Truecrypt standard volume using the normal header using aes and ripemd
+password appears to be valid for a Truecrypt standard volume using the backup header using aes and ripemd
 </code></pre>
 
 <h4>
@@ -280,25 +268,189 @@ password appears to be valid for a TrueCrypt standard volume using the backup he
 <h2>
 <a id="prerequisites" class="anchor" href="#prerequisites" aria-hidden="true"><span class="octicon octicon-link"></span></a>Prerequisites:</h2>
 
-<p>You must have pycryptoplus installed - <a href="https://github.com/doegox/python-cryptoplus">https://github.com/doegox/python-cryptoplus</a>
-For many examples you must have docopt installed - <a href="http://docopt.org/">http://docopt.org/</a></p>
+<p>You must have pycryptoplus installed - <a href="https://github.com/doegox/python-cryptoplus">https://github.com/doegox/python-cryptoplus</a></p>
+
+<p>For many examples you must have docopt installed - <a href="http://docopt.org/">http://docopt.org/</a></p>
 
 <h2>
 <a id="truecrypt-documentation" class="anchor" href="#truecrypt-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Truecrypt Documentation:</h2>
 
-<p>Very little as the code is generally compact. See the examples, and pytruecrypt.py - the comments show how to use it.</p>
-      </section>
-    </div>
+<p>Very little as the code is generally compact. See the examples, and pyTruecrypt.py - the comments show how to use it. I am slowly expanding this section. </p>
 
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Pytruecrypt maintained by <a href="https://github.com/4144414D">4144414D</a></p>
-        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+<h3>
+<a id="truecrypt-basics" class="anchor" href="#truecrypt-basics" aria-hidden="true"><span class="octicon octicon-link"></span></a>Truecrypt Basics</h3>
+
+<p>Truecrypt works in two main ways either as full disk encryption or using
+encrypted containers on Windows, Linux, or OSX. On windows it is also
+possible to encrypt the operating system with Truecrypt and boot into
+windows. This is not possible on Linux or OSX but it can still use full
+disk encryption on non OS disks.</p>
+
+<h3>
+<a id="algorithms" class="anchor" href="#algorithms" aria-hidden="true"><span class="octicon octicon-link"></span></a>Algorithms</h3>
+
+<p>Truecrypt allows the following encryption schemes all working in XTS
+mode. Where more than one encryption algorithm is used the data is
+encrypted with each algorithm using different master keys.</p>
+
+<ul>
+<li>AES (default)</li>
+<li>Serpent</li>
+<li>Twofish</li>
+<li>AES - Twofish</li>
+<li>AES - Twofish - Serpent</li>
+<li>Serpent - AES</li>
+<li>Serpent - Twofish - AES</li>
+</ul>
+
+<p>Three hash algorithms are available, these are:</p>
+
+<ul>
+<li>RIPEMD (default)</li>
+<li>SHA-512</li>
+<li>WHIRLPOOL</li>
+</ul>
+
+<h3>
+<a id="encryption-in-truecrypt" class="anchor" href="#encryption-in-truecrypt" aria-hidden="true"><span class="octicon octicon-link"></span></a>Encryption in Truecrypt</h3>
+
+<p>Truecrypt uses each of the different encryption algorithms in XTS mode.
+In short this means that same plain text data encrypted with the same
+key but in a different location will produce a different cipher text.
+For example a completely zeroed disk encrypted with XTS mode would look
+completely random, each sector of zeros produces a different sector of
+encrypted data. If ECB mode was used instead you would see a repeating
+pattern where each sector of zeros produced the same sector of encrypted
+data.</p>
+
+<p>Truecrypt stores the master keys within the Truecrypt header and these
+keys are not generated based on the password chosen for the container.
+Instead the master keys are generated randomly when the container is
+created and stored in the header, the header is then encrypted using the
+password provided for by the user. Only by knowing the password to the
+header can you successfully decrypt the header and get to the master
+keys to decrypt the data.</p>
+
+<p>This allows the user to change the password to a container. Rather then
+needing to re-encrypt the whole container only the headers need to be
+re-encrypted with the new password, the master keys remain the same.</p>
+
+<p>This raises the obvious risk, if an attacker can decrypt the header at
+any point in time they can use the master keys to decrypt data. I.E. A
+container is created with a simple password, the attacker cracks this 
+password and stores the master keys. Later the users changes the password
+to the container in an effort to increase security, however the attacker 
+already has the master keys and as such can decrypt the container. </p>
+
+<h3>
+<a id="volumes" class="anchor" href="#volumes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Volumes</h3>
+
+<p>TrueCrypt allows the user to have a normal volume and a hidden volume.
+The normal volume is designed to be well encrypted but if the TrueCrypt
+volume is detected you would not be able to plausibly deny its
+existence, and so rubber hose cryptanalysis could be used to get the
+password from you. The hidden volume on the other hand is designed to
+hide within the normal volume and would look like any other section of
+random data, allowing you to plausibly deny it being there.</p>
+
+<p>The layout of a container is shown in below. The first 256 sectors store 
+the main headers, while the last 256 sectors store the backup headers 
+should the main headers be damaged. Everything in-between is the data 
+section of the container and will store the actual user data.</p>
+
+<p>Almost everything within the container is encrypted so normal analysis
+of the file will simply show ‘random’ data. Only the salts for each of
+the headers are store in a decrypted form, however these are simply 64
+bits of random data so should be impossible to tell them apart.</p>
+
+<p>The normal and backup headers contain the same decrypted data however
+they are encrypted with different salts. This means they will appear to
+be completely different on the binary level.</p>
+
+<p>The space in the headers (254 sectors in total) is seeded with random
+data when the container is first created. This is one of the main
+reasons it’s difficult to detect a hidden volume, with or without one
+this sector will seemingly contain random data.</p>
+
+<p><img src="https://raw.githubusercontent.com/4144414D/pytruecrypt/gh-pages/images/container-layout.png" alt="Truecrypt Layout"></p>
+
+<h3>
+<a id="truecrypt-header-v5" class="anchor" href="#truecrypt-header-v5" aria-hidden="true"><span class="octicon octicon-link"></span></a>Truecrypt Header v5</h3>
+
+<p>Truecrypt 7.1a uses the header version 5. This header is the same for
+normal and hidden volumes and system encryption, the difference is
+simply their location and flag bits.</p>
+
+<h4>
+<a id="header-elements" class="anchor" href="#header-elements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Header Elements</h4>
+
+<p><strong>1)  Salt - 64 Bytes</strong></p>
+
+<p>The salt is used when encrypting the header. This is randomly generated data and so will look as if it’s encrypted.</p>
+
+<p><strong>2)  File Signature - 4 Bytes</strong></p>
+
+<p>The ASCII string ‘TRUE’. This is used to check if the header has been decrypted correctly.</p>
+
+<p><strong>3)  Header Version - 2 Bytes</strong></p>
+
+<p>The version of Truecrypt header in use, for 7.1a this will always be \x00\x05.</p>
+
+<p><strong>4)  Truecrypt Version - 2 Bytes</strong></p>
+
+<p>The minimum version of Truecrypt needed to use the volume. For 7.1a this is always be <a href="x00x07">\x00\x07</a>.</p>
+
+<p><strong>5)  Key CRC - 4 Bytes</strong></p>
+
+<p>CRC32 value for the bytes 256-511 of the header. I.E. the master keys. This is also used to confirm if the Truecrypt header has been decrypted correctly.</p>
+
+<p><strong>6)  Reserved Space - 16 Bytes</strong></p>
+
+<p>16 Bytes of \x00 which aren’t used in the header.</p>
+
+<p><strong>7)  Size of Hidden Volume - 8 Bytes</strong></p>
+
+<p>The size in bytes of the hidden volume. This is set to zero in a non-hidden volume.</p>
+
+<p><strong>8)  Size of Hidden Volume - 8 Bytes</strong></p>
+
+<p>The size in bytes of the volume.</p>
+
+<p><strong>9)  Offset to Data - 8 Bytes</strong></p>
+
+<p>The is the byte offset from the start of the data. If this header is for a normal (non-hidden) container this should be \x00\x00\x00\x00\x00\x02\x00\x00. This is 131072 bytes, or sector 256.</p>
+
+<p><strong>10) Size of Data - 8 Bytes</strong></p>
+
+<p>The total size in bytes of the data portion of the container.</p>
+
+<p><strong>11) Flag Bits - 4 Bytes</strong></p>
+
+<p>Used to determine what type of container is in use. Bit 0 is set for system encryption, while bit 1 is set for non-system in place encryption. The other bits are not used.</p>
+
+<p><strong>12) Reserved Space - 120 Bytes</strong></p>
+
+<p>Further space in the header which isn’t used.</p>
+
+<p><strong>13) Header CRC - 4 Bytes</strong></p>
+
+<p>A CRC32 value for the bytes 64-251 of the header.</p>
+
+<p><strong>14) Master Keys - 64 Bytes each</strong></p>
+
+<p>The remaining space is devoted to the master keys. If multiple encryption algorithms are used then multiple keys will be present.</p>
+
+<p><img src="https://raw.githubusercontent.com/4144414D/pyTruecrypt/gh-pages/images/header-layout.png" alt="Truecrypt Header"></p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/4144414D/pytruecrypt">Pytruecrypt</a> is maintained by <a href="https://github.com/4144414D">4144414D</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
       </footer>
-    </div>
 
-    
+    </section>
 
+  
   </body>
 </html>
+
