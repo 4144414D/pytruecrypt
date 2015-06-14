@@ -206,9 +206,75 @@ To read a hidden file:
 Prerequisites:
 -------------
 You must have pycryptoplus installed - https://github.com/doegox/python-cryptoplus
+
 For many examples you must have docopt installed - http://docopt.org/
   
 Truecrypt Documentation:
 -------------
 
-Very little as the code is generally compact. See the examples, and pytruecrypt.py - the comments show how to use it.
+Very little as the code is generally compact. See the examples, and pytruecrypt.py - the comments show how to use it. I am slowly expanding this section. 
+
+###TrueCrypt Header v5
+
+TrueCrypt 7.1a uses the header version 5. This header is the same for
+normal and hidden volumes and system encryption, the difference is
+simply their location and flag bits.
+
+####Header Elements
+
+1)  Salt - 64 Bytes\
+    The salt is used when encrypting the header. This is randomly
+    generated data and so will look as if it’s encrypted.
+
+2)  File Signature - 4 Bytes\
+    The ASCII string ‘TRUE’. This is used to check if the header has
+    been decrypted correctly.
+
+3)  Header Version - 2 Bytes\
+    The version of TrueCrypt header in use, for 7.1a this will always be
+    [\\x00\\x05](\x00\x05).
+
+4)  TrueCrypt Version - 2 Bytes\
+    The minimum version of TrueCrypt needed to use the volume. For 7.1a
+    this is always be [\\x00\\x07](\x00\x07).
+
+5)  Key CRC - 4 Bytes\
+    A CRC32 value for the bytes 256-511 of the header. I.E. the master
+    keys. This is also used to confirm if the TrueCrypt header has been
+    decrypted correctly.
+
+6)  Reserved Space - 16 Bytes\
+    16 Bytes of [\\x00](\x00) which aren’t used in the header.
+
+7)  Size of Hidden Volume - 8 Bytes\
+    The size in bytes of the hidden volume. This is set to zero in a
+    non-hidden volume.
+
+8)  Size of Hidden Volume - 8 Bytes\
+    The size in bytes of the volume.
+
+9)  Offset to Data - 8 Bytes\
+    The is the byte offset from the start of the data. If this header is
+    for a normal (non-hidden) container this should be
+    [\\x00\\x00\\x00\\x00\\x00\\x02\\x00\\x00](\x00\x00\x00\x00\x00\x02\x00\x00).
+    This is 131072 bytes, or sector 256.
+
+10) Size of Data - 8 Bytes\
+    The total size in bytes of the data portion of the container.
+
+11) Flag Bits - 4 Bytes\
+    Used to determine what type of container is in use. Bit 0 is set for
+    system encryption, while bit 1 is set for non-system in place
+    encryption. The other bits are not used.
+
+12) Reserved Space - 120 Bytes\
+    Further space in the header which isn’t used.
+
+13) Header CRC - 4 Bytes\
+    A CRC32 value for the bytes 64-251 of the header.
+
+14) Master Keys - 64 Bytes each\
+    The remaining space is devoted to the master keys. If multiple
+    encryption algorithms are used then multiple keys will be present.
+	
+![Truecrypt Header](https://raw.githubusercontent.com/4144414D/pytruecrypt/gh-pages/images/header-layout.png)
