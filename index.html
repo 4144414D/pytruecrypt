@@ -436,9 +436,9 @@ simply their location and flag bits.</p>
 
 <p>A CRC32 value for the bytes 64-251 of the header.</p>
 
-<p><strong>14) Master Keys - 64 Bytes each</strong></p>
+<p><strong>14) Master Keys - 32 Bytes each</strong></p>
 
-<p>The remaining space is devoted to the master keys. If multiple encryption algorithms are used then multiple keys will be present.</p>
+<p>The remaining space is devoted to the master keys. If multiple encryption algorithms are used then multiple keys will be present. Each 'master key' is comprised of 2 separate 128-bit keys for XTS.</p>
 
 <p><img src="https://raw.githubusercontent.com/4144414D/pyTruecrypt/gh-pages/images/header-layout.png" alt="Truecrypt Header"></p>
 
