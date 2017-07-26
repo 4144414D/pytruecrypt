@@ -368,3 +368,5 @@ A CRC32 value for the bytes 64-251 of the header.
 The remaining space is devoted to the master keys. If multiple encryption algorithms are used then multiple keys will be present. Each 'master key' is comprised of 2 separate 128-bit keys for XTS.
 	
 ![Truecrypt Header](https://raw.githubusercontent.com/4144414D/pyTruecrypt/gh-pages/images/header-layout.png)
+
+PyVmMonitor is being used to make this script faster! Check it out http://www.pyvmmonitor.com/
