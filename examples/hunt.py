@@ -12,36 +12,55 @@ GitHub: https://github.com/4144414D/pytruecrypt
 Email: adam@nucode.co.uk
 
 Usage:
-  hunt <file> <passwords>... [-da] --chain=<n>
+  hunt <file> <passwords>... (--chain=<n>|--brute) [-a]
 
 Options:
   -h, --help              Show this screen.
-  -d, --dump              Dump decrypted header if successful.
   -a, --all               Search for all TrueCrypt options. Very slow.
-  -c n, --chain n         Search using chain of entropy, n is number of sectors.
+  -b, --brute			  Test all sectors. Extremely slow.
+  -c n, --chain n         Search using chain of high entropy, n is number of sectors.
 """
 
 from pytruecrypt import *
 from util import *
 from docopt import docopt
-import binascii
+from pyentrp import entropy as ent
 import tempfile
 import os
 import sys
 import time
 import math
 import pickle
+import numpy as np
 
 #http://blog.dkbza.org/2007/05/scanning-data-for-entropy-anomalies.html
-def entropy(data):
+def entropy2(data):
   if not data:
     return 0
   entropy = 0
+  l = len(data)
   for x in range(256):
     p_x = float(data.count(chr(x)))/len(data)
     if p_x > 0:
       entropy += - p_x*math.log(p_x, 2)
   return entropy
+
+def entropy(data):
+   """ Computes entropy of label distribution. """
+   labels = list(data)
+   n_labels = 512.0
+
+   value,counts = np.unique(labels, return_counts=True)
+   probs = counts / n_labels
+
+   n_classes = np.count_nonzero(probs)
+
+   ent = 0.
+
+   # Compute entropy
+   for i in probs:
+     ent -= i * math.log(i, 2)
+   return ent
 
 def test_sector(hash_options, crypto_options, passwords, data, sector_num):
     #create memory backed temp file
@@ -89,7 +108,7 @@ def chain_search(source_entropy,target):
     tick = 0
     for x in range(len(source_entropy)):
         tick += 1
-        if tick == 512:
+        if tick == 500:
             tick = 0
             percentage = (float(100) / len(source_entropy)) * x
             print "\rFinding chains... {}%".format(percentage),
@@ -127,22 +146,24 @@ def search_range(start,end,f,hash_options,crypto_options,passwords):
         test_sector(hash_options, crypto_options, passwords, data, sector_num)
 
 def test_chains(chains,f,hash_options,crypto_options,passwords):
+    search_size = 8
+
     for chain in chains:
         chain_sector = chain[0]
         chain_len = chain[1]
 
         #calc start location
-        search_start = (chain_sector - 8) * 512
-        search_size = (chain_sector + 8) * 512
-        search_range(search_start, search_size, f,hash_options,crypto_options,passwords)
+        search_start = (chain_sector - search_size) * 512
+        search_end = (chain_sector + search_size) * 512
+        search_range(search_start, search_end, f,hash_options,crypto_options,passwords)
 
         #calc start location, searching for the typical location of a normal
         #backup header and not a hidden header. Changing the -256 will change
         #this or increasing the search size will aloow it to be found however
         #this will be slow
-        search_end = (chain_sector + chain_len - 256 - 8) * 512
-        search_size = (chain_sector + chain_len - 256 + 8) * 512
-        search_range(search_end, search_size, f,hash_options,crypto_options,passwords)
+        search_start = (chain_sector + chain_len - 256 - search_size) * 512
+        search_end = (chain_sector + chain_len - 256 + search_size) * 512
+        search_range(search_start, search_end, f,hash_options,crypto_options,passwords)
 
 def save(obj, path):
     with open(path, 'wb') as f:
@@ -166,35 +187,39 @@ def main(arguments):
     #open file and find total size
     f = open(arguments['<file>'], 'rb')
     f.seek(0, os.SEEK_END)
-    f.tell()
     size = f.tell()
     f.seek(0)
 
-    if os.path.isfile("ent.pickle"):
-        print "Loading source entropy from ent.pickle"
-        source_entropy = load("ent.pickle")
+	#print "Starting..."
+    if arguments['--brute']:
+	       search_range(0,size,f,hash_options,crypto_options,arguments['<passwords>'])
     else:
-        source_entropy = []
-        #run entropy calculations
-        tick = 0
-        for x in range(0,size,512):
-            tick += 1
-            if tick == 512:
-                tick = 0
-                percentage = (float(100) / size) * x
-                print "\rCalculating source entropy... {}%".format(percentage),
-            data = f.read(512)
-            sector_entropy = entropy(data)
-            source_entropy.append(sector_entropy)
-        save(source_entropy, 'ent.pickle')
-        print "\rCalculating source entropy... 100%          "
+		if os.path.isfile("ent.pickle"):
+			print "Loading source entropy from ent.pickle"
+			source_entropy = load("ent.pickle")
+		else:
+			source_entropy = []
+			#run entropy calculations
+			tick = 0
+			for x in range(0,size,512):
+				tick += 1
+				if tick == 500:
+					tick = 0
+					percentage = (float(100) / size) * x
+					print "\rCalculating source entropy... {}%".format(percentage),
+				data = f.read(512)
+				sector_entropy = entropy(data)
+				source_entropy.append(sector_entropy)
+			save(source_entropy, 'ent.pickle')
+			print "\rCalculating source entropy... 100%          "
 
-    #convert chain MB into number of sectors
-    target =  int(arguments['--chain']) * 1024 * 1024 / 512
+		target = int(arguments['--chain'])
 
-    chains = chain_search(source_entropy,target)
-    if len(chains) > 0:
-        test_chains(chains,f,hash_options,crypto_options,arguments['<passwords>'])
+		chains = chain_search(source_entropy,target)
+		if len(chains) > 0:
+			test_chains(chains,f,hash_options,crypto_options,arguments['<passwords>'])
+		else:
+			print "No chains found."
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
