@@ -17,7 +17,7 @@ Usage:
 Options:
   -h, --help              Show this screen.
   -a, --all               Search for all TrueCrypt options. Very slow.
-  -b, --brute			  Test all sectors. Extremely slow.
+  -b, --brute              Test all sectors. Extremely slow.
   -c n, --chain n         Search using chain of high entropy, n is number of sectors.
 """
 
@@ -190,36 +190,36 @@ def main(arguments):
     size = f.tell()
     f.seek(0)
 
-	#print "Starting..."
+    #print "Starting..."
     if arguments['--brute']:
-	       search_range(0,size,f,hash_options,crypto_options,arguments['<passwords>'])
+           search_range(0,size,f,hash_options,crypto_options,arguments['<passwords>'])
     else:
-		if os.path.isfile("ent.pickle"):
-			print "Loading source entropy from ent.pickle"
-			source_entropy = load("ent.pickle")
-		else:
-			source_entropy = []
-			#run entropy calculations
-			tick = 0
-			for x in range(0,size,512):
-				tick += 1
-				if tick == 500:
-					tick = 0
-					percentage = (float(100) / size) * x
-					print "\rCalculating source entropy... {}%".format(percentage),
-				data = f.read(512)
-				sector_entropy = entropy(data)
-				source_entropy.append(sector_entropy)
-			save(source_entropy, 'ent.pickle')
-			print "\rCalculating source entropy... 100%          "
+        if os.path.isfile("ent.pickle"):
+            print "Loading source entropy from ent.pickle"
+            source_entropy = load("ent.pickle")
+        else:
+            source_entropy = []
+            #run entropy calculations
+            tick = 0
+            for x in range(0,size,512):
+                tick += 1
+                if tick == 500:
+                    tick = 0
+                    percentage = (float(100) / size) * x
+                    print "\rCalculating source entropy... {}%".format(percentage),
+                data = f.read(512)
+                sector_entropy = entropy(data)
+                source_entropy.append(sector_entropy)
+            save(source_entropy, 'ent.pickle')
+            print "\rCalculating source entropy... 100%          "
 
-		target = int(arguments['--chain'])
+        target = int(arguments['--chain'])
 
-		chains = chain_search(source_entropy,target)
-		if len(chains) > 0:
-			test_chains(chains,f,hash_options,crypto_options,arguments['<passwords>'])
-		else:
-			print "No chains found."
+        chains = chain_search(source_entropy,target)
+        if len(chains) > 0:
+            test_chains(chains,f,hash_options,crypto_options,arguments['<passwords>'])
+        else:
+            print "No chains found."
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
