@@ -29,12 +29,14 @@ It provides two options:
 
 This tutorial only discusses the chain approach. 
 
-The diagram below shows the entropy of each sector on the disk. We can see a large section of high entropy data from around sector 27701 to around 48476. This is the container. By looking for sections of continuous high entropy we can target the likely locations of TrueCrypt headers. By checking the sectors around 27701 and 48476 we are able to check a small number of sectors as every check will take some time, particularly on VeraCrypt headers. 
+The diagram below shows the entropy (Shannon entropy) of each sector on the disk. We can see a large section of high entropy data from around sector 27701 to around 48476. This is the container. By looking for sections of continuous high entropy we can target the likely locations of TrueCrypt headers. By checking the sectors around 27701 and 48476 we are able to check a small number of sectors as every check will take some time, particularly on VeraCrypt headers. 
 
 ![Entropy](https://raw.githubusercontent.com/4144414D/pytruecrypt/gh-pages/resources/entropy-diagram.png)
 
+You are not required to do any of this work yourself. hunt will calculate the entropy and do this targeting for you. This section is just explaining what is happening.
  
 A few warnings. There will, of course, be high other sections of high entropy on a normal disk. Files such as compressed images or zip files will themselves have high entropy. The time wasted by attempting to decrypt these can be avoided by using a high sector chain count. This works because containers are typically quite large and should stand out against these other files. 
+
 It is possible to create a container with low entropy and with smaller sections of high entropy. This happens if the ‘dynamic’ option is chosen when creating the container. If this is the case you need to look for the header itself which is only 256 sectors in size. This will cause many more false positives as other files with high entropy may be this small. 
 
 Running hunt
