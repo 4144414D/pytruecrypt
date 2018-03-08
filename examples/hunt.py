@@ -17,7 +17,7 @@ Usage:
 Options:
   -h, --help              Show this screen.
   -a, --all               Search for all TrueCrypt options. Very slow.
-  -b, --brute              Test all sectors. Extremely slow.
+  -b, --brute             Test all sectors. Extremely slow.
   -c n, --chain n         Search using chain of high entropy, n is number of sectors.
 """
 
@@ -76,8 +76,8 @@ def test_sector(hash_options, crypto_options, passwords, data, sector_num):
                 if tc.valid or (entropy(tc.tchdr_plain) < 3):
                     r = open('results.txt','a')
                     if tc.valid:
-                        print 'Sector {}: Fully vaild header found'.format(sector_num)
-                        r.write('Sector {}: Fully vaild header found\n'.format(sector_num))
+                        print 'Sector {}: Fully valid header found'.format(sector_num)
+                        r.write('Sector {}: Fully valid header found\n'.format(sector_num))
                     else:
                         print 'Sector {}: Low entropy decrypted sector, possible damaged header'.format(sector_num)
                         r.write('Sector {}: Low entropy decrypted sector, possible damaged header\n'.format(sector_num))
@@ -194,9 +194,10 @@ def main(arguments):
     if arguments['--brute']:
            search_range(0,size,f,hash_options,crypto_options,arguments['<passwords>'])
     else:
-        if os.path.isfile("ent.pickle"):
-            print "Loading source entropy from ent.pickle"
-            source_entropy = load("ent.pickle")
+        pickle_file = arguments['<file>']+'.entropy'
+        if os.path.isfile(pickle_file):
+            print "Loading source entropy from {}".format(pickle_file)
+            source_entropy = load(pickle_file)
         else:
             source_entropy = []
             #run entropy calculations
@@ -210,7 +211,7 @@ def main(arguments):
                 data = f.read(512)
                 sector_entropy = entropy(data)
                 source_entropy.append(sector_entropy)
-            save(source_entropy, 'ent.pickle')
+            save(source_entropy, pickle_file)
             print "\rCalculating source entropy... 100%          "
 
         target = int(arguments['--chain'])
