@@ -1,4 +1,4 @@
-This tutorial explains how to use hunt to locate and recover deleted and/or damaged TrueCrypt containers.
+This tutorial explains how to use [hunt](https://github.com/4144414D/pytruecrypt/blob/master/examples/hunt.py) to locate and recover deleted and/or damaged TrueCrypt containers.
 
 These techniques will help you locate the containers but you will require either the password or a memory dump containing the container keys.
 
