@@ -116,6 +116,7 @@ def chain_search(source_entropy,target):
             #end chain or skip
             if cur_len > -1:
                 #end chain
+				cur_len += 1
                 if cur_len >= target:
                     #append current chain to list
                     chains.append([cur_start,cur_len])
