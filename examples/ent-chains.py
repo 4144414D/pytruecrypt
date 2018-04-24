@@ -63,7 +63,7 @@ def chain_search(source_entropy,target):
             #end chain or skip
             if cur_len > -1:
                 #end chain
-				cur_len += 1
+                cur_len += 1
                 if cur_len >= target:
                     #append current chain to list
                     chains.append([cur_start,cur_len])
@@ -103,7 +103,7 @@ def main(arguments):
 
     chains = chain_search(source_entropy,target)
     if len(chains) > 0:
-        print 
+        print
         print "start\tlen"
         for chain in chains:
             print "{}\t{}".format(chain[0],chain[1])
