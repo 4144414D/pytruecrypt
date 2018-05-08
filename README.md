@@ -22,6 +22,18 @@ Examples:
 - quick-container.py: Produces a working Truecrypt container in seconds
 - reserved.py: Hides data within the reserved space of a container
 
+Other Tools
+-----------
+- tcplay –  pretty much fully featured and stable TrueCrypt implementation
+- TCHunt – locates allocated containers
+- UNTRUE – checking passwords against TrueCrypt encrypted volumes and disks, and/or decrypting the data
+- TestCrypt – helps recover lost TrueCrypt partitions
+- TCHead – header brute-forcer and hidden volume detection tool
+- Hashcat – cracks things
+- Passware – cracks things
+- Elcomsoft FDD – cracks things 
+- [tckfc](https://github.com/Octosec/tckfc) - Searches for vaild keyfiles
+
 Example Usage
 -------------
 Below are examples on how to use the example scripts.
