@@ -33,6 +33,7 @@ Other Tools
 - Passware – cracks things
 - Elcomsoft FDD – cracks things 
 - [tckfc](https://github.com/Octosec/tckfc) - Searches for vaild keyfiles
+- [TrueCrypt Search and Decrypt](https://github.com/theevilbit/tcsandd) - Tool created for 2013 DC3 Forensic Challenge
 
 Example Usage
 -------------
