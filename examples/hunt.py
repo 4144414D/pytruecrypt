@@ -25,7 +25,6 @@ Options:
 from pytruecrypt import *
 from util import *
 from docopt import docopt
-from pyentrp import entropy as ent
 import tempfile
 import os
 import sys

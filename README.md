@@ -22,6 +22,19 @@ Examples:
 - quick-container.py: Produces a working Truecrypt container in seconds
 - reserved.py: Hides data within the reserved space of a container
 
+Other Tools
+-----------
+- tcplay –  pretty much fully featured and stable TrueCrypt implementation
+- TCHunt – locates allocated containers
+- UNTRUE – checking passwords against TrueCrypt encrypted volumes and disks, and/or decrypting the data
+- TestCrypt – helps recover lost TrueCrypt partitions
+- TCHead – header brute-forcer and hidden volume detection tool
+- Hashcat – cracks things
+- Passware – cracks things
+- Elcomsoft FDD – cracks things 
+- [tckfc](https://github.com/Octosec/tckfc) - Searches for vaild keyfiles
+- [TrueCrypt Search and Decrypt](https://github.com/theevilbit/tcsandd) - Tool created for 2013 DC3 Forensic Challenge
+
 Example Usage
 -------------
 Below are examples on how to use the example scripts.
@@ -112,7 +125,7 @@ dump.py will perform a hex dump of the decrypted header and first sector of a co
     01e0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
     01f0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 55 aa   ..............U.
 
-####image.py
+###image.py
 image is used to image a Truecrypt container for further analysis. The container can be open with a password or with keys extracted from memory.
 
 Encryption modes can be assigned long or short hand where:
@@ -130,33 +143,33 @@ Similarly hash functions can be assigned long or short hand where:
     sha-512   = s
     whirlpool = w
 
-#####Example usage:
+####Example usage:
 
     > image pwd <tc> <image> <mode> <password> [<hash>] [-vbh] [(-f -oBYTES -dBYTES)]
     > image key <tc> <image> <mode> [-aKEY -tKEY -sKEY] [(-oBYTES -dBYTES)]
 
-######Scenario 1:
+#####Scenario 1:
 You wish to image a Truecrypt file "input1.tc" to an image named "output1.dd", 
 it uses aes and ripemd. The password is "Scenario1". As ripemd is the default
 for Truecrypt it does not need to be specified.
 
     > image pwd input1.tc output1.dd aes Scenario1 
 
-######Scenario 2:
+#####Scenario 2:
 You wish to image a Truecrypt file "input2.tc" to an image named "output2.dd",
 it uses aes-serpent and sha512. The password is "Scenario2". You wish to save 
 time and use the short hand commands.
 
     > image pwd input2.tc output2.dd as Scenario2 s
 
-######Scenario 3:
+#####Scenario 3:
 You wish to image a Truecrypt file "input3.tc" to an image named "output3.dd",
 it uses aes-serpent. You know it contains a hidden volume and the password is 
 "Scenario3".
 
     > image pwd input3.tc output3.dd aes-serpent Scenario3 --hidden
 
-######Scenario 4:
+#####Scenario 4:
 You wish to image a Truecrypt file "input4.tc" to an image named "output4.dd",
 it uses aes. You do not know the password but have extracted AES keys from 
 memory. 
@@ -166,7 +179,7 @@ memory.
     feeb4791a0befa4
 
 
-####pw-check.py
+###pw-check.py
 pw-check.py is used to check that a small list of passwords work against a container. It checks all options available in Truecrypt and allows you to confirm that normal and backup headers match. The -d option will print the decoded header to screen if successful, the -v option will also read Veracrypt files.  
 
     > pw-check <container> <password>
@@ -174,14 +187,14 @@ pw-check.py is used to check that a small list of passwords work against a conta
 	password appears to be valid for a Truecrypt standard volume using the normal header using aes and ripemd
 	password appears to be valid for a Truecrypt standard volume using the backup header using aes and ripemd
 
-####pwcracker.py
+###pwcracker.py
 pwcracker.py is an example password cracker for Truecrypt. Simply provide a word list and it will attempt to crack the container.
 
     > pwcracker <container> <wordlist>
     > pwcracker example.tc wordlist.txt
     > PW Found: password
 
-####quick-container.py
+###quick-container.py
 quick-container.py produces a Truecrypt container quickly by skipping the first stage encryption setting. This is therefore similar to 'quick format' full disk encryption whereby the free space is not first encrypted. This means a hidden volume is very obvious and it's possible to track the ammount of encrypted data stored within a container. 
 
 The containers are not formatted and once mounted will require a file system to be created. Containers are always created using AES and ripemd. 
@@ -189,7 +202,7 @@ The containers are not formatted and once mounted will require a file system to 
     > quick-container <container> <password> <mb-size>
     > quick-container example password 1024
 	
-####reserved.py
+###reserved.py
 reserved.py uses the free space in the Truecrypt header to hide additional data. This data is encrypted with the same password as the container itself. 
 
 To hide a file:
@@ -365,7 +378,7 @@ A CRC32 value for the bytes 64-251 of the header.
 
 **14) Master Keys - 32 Bytes each**
 
-The remaining space is devoted to the master keys. If multiple encryption algorithms are used then multiple keys will be present. Each 'master key' is comprised of 2 separate 128-bit keys for XTS.
+The remaining space is devoted to the master keys. If multiple encryption algorithms are used then multiple keys will be present. Each 'master key' is comprised of 2 separate 256-bit keys for XTS.
 	
 ![Truecrypt Header](https://raw.githubusercontent.com/4144414D/pyTruecrypt/gh-pages/images/header-layout.png)
 
