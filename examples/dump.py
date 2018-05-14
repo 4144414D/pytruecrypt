@@ -64,14 +64,13 @@ print hexdump(tc.getHeaderRaw())
 print "HEADER ------------"
 hdr = tc.getHeader()
 for k in hdr:
-	print k, ":", 
+	print k, ":",
 
 	if k=="Keys":
-		print binascii.hexlify(hdr[k])	
-	else:	
+		print binascii.hexlify(hdr[k])
+	else:
 		print hdr[k]
 
 #Print first sector
 print "FIRST SECTOR-------"
 print hexdump(tc.getPlainSector(0))
-

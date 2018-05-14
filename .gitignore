@@ -57,9 +57,15 @@ build.bat
 
 #
 images/
-.dd
-.tc
-.001
-.ico
-*.ico
+*.dd
 *.tc
+*.001
+*.ico
+*.log
+*.entropy
+*.txt
+*.py
+!examples/*.py
+!pytruecrypt.py
+!util.py
+dd.exe
